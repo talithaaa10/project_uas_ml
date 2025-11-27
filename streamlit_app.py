@@ -12,7 +12,7 @@ st.write("Aplikasi ini mengelompokkan daerah menjadi kategori *Rawan Kemiskinan*
 # ------------------------------------------------------------
 @st.cache_resource
 def load_bundle():
-    bundle = joblib.load("model.pkl")
+    bundle = joblib.load("kmeans.pkl")
     model = bundle["model"]      # KMeans
     scaler = bundle["scaler"]    # StandardScaler
     return model, scaler
@@ -131,4 +131,5 @@ if df is not None:
             data=csv_out,
             file_name="hasil_cluster_kemiskinan.csv",
             mime="text/csv"
+
         )
