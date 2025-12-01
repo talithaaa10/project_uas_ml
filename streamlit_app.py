@@ -8,7 +8,7 @@ st.title("Clustering Daerah Rawan Kemiskinan")
 st.write("Aplikasi ini mengelompokkan daerah menjadi kategori *Rawan Kemiskinan* dan *Aman* berdasarkan model K-Means.")
 
 # ------------------------------------------------------------
-# 1. Load model + scaler dari model.pkl
+# 1. Load model + scaler dari kmeans.pkl
 # ------------------------------------------------------------
 @st.cache_resource
 def load_bundle():
@@ -47,90 +47,105 @@ if df is not None:
     st.subheader("Preview Data")
     st.write(df.head())
 
+    # Ambil hanya kolom numerik
     numeric_df = df.select_dtypes(include=['int64', 'float64'])
 
     if numeric_df.shape[1] < 2:
         st.error("Dataset membutuhkan minimal 2 kolom numerik.")
-    else:
-        # Scaling
-        scaled = scaler.transform(numeric_df)
+        st.stop()
 
-        # Prediksi cluster
-        df["cluster"] = model.predict(scaled)
-
-        # ------------------------------------------------------------
-        # 5. Menentukan cluster dengan risiko tertinggi
-        # ------------------------------------------------------------
-        cluster_means = df.groupby("cluster")[numeric_df.columns].mean()
-
-        # Asumsi: cluster dengan rata-rata lebih tinggi dianggap lebih rawan kemiskinan
-        risk_scores = cluster_means.mean(axis=1)
-        highest_risk_cluster = risk_scores.idxmax()
-
-        # Tambahkan kolom kategori
-        df["kategori"] = df["cluster"].apply(
-            lambda c: "Rawan Kemiskinan" if c == highest_risk_cluster else "Aman"
+    # ------------------------------------------------------------
+    # FIX paling penting:
+    # Samakan kolom dataset dengan kolom saat scaler training
+    # ------------------------------------------------------------
+    try:
+        numeric_df = numeric_df[scaler.feature_names_in_]
+    except Exception as e:
+        st.error(
+            "Kolom dataset tidak cocok dengan model! "
+            "Dataset harus memiliki kolom numerik berikut (urutan wajib sama): "
+            + ", ".join(scaler.feature_names_in_)
         )
+        st.stop()
 
-        # ------------------------------------------------------------
-        # 6. Tampilkan hasil kategori
-        # ------------------------------------------------------------
-        st.subheader("Kategori Daerah")
-        st.write(df[["cluster", "kategori"] + list(df.columns[:-2])])
+    # ------------------------------------------------------------
+    # 5. Scaling data
+    # ------------------------------------------------------------
+    scaled = scaler.transform(numeric_df)
 
-        # ------------------------------------------------------------
-        # 7. Tampilkan daftar daerah rawan dan aman
-        # ------------------------------------------------------------
-        st.subheader("Daerah Rawan Kemiskinan (🟥)")
-        st.write(df[df["kategori"] == "Rawan Kemiskinan"])
+    # ------------------------------------------------------------
+    # 6. Prediksi cluster
+    # ------------------------------------------------------------
+    df["cluster"] = model.predict(scaled)
 
-        st.subheader("Daerah Aman (🟩)")
-        st.write(df[df["kategori"] == "Aman"])
+    # Hitung rata-rata untuk menentukan cluster risiko tertinggi
+    cluster_means = df.groupby("cluster")[numeric_df.columns].mean()
+    risk_scores = cluster_means.mean(axis=1)
+    highest_risk_cluster = risk_scores.idxmax()
 
-        # ------------------------------------------------------------
-        # 8. Visualisasi Cluster dengan Kategori
-        # ------------------------------------------------------------
-        st.subheader("Visualisasi Clustering")
+    # Tambahkan kategori
+    df["kategori"] = df["cluster"].apply(
+        lambda c: "Rawan Kemiskinan" if c == highest_risk_cluster else "Aman"
+    )
 
-        f1 = numeric_df.columns[0]
-        f2 = numeric_df.columns[1]
+    # ------------------------------------------------------------
+    # 7. Tampilkan Hasil
+    # ------------------------------------------------------------
+    st.subheader("Kategori Daerah")
+    st.write(df)
 
-        fig, ax = plt.subplots()
+    # Daerah Rawan
+    st.subheader("Daerah Rawan Kemiskinan (🟥)")
+    st.write(df[df["kategori"] == "Rawan Kemiskinan"])
 
-        colors = df["kategori"].map({
-            "Rawan Kemiskinan": "red",
-            "Aman": "green"
-        })
+    # Daerah Aman
+    st.subheader("Daerah Aman (🟩)")
+    st.write(df[df["kategori"] == "Aman"])
 
-        ax.scatter(
-            numeric_df[f1],
-            numeric_df[f2],
-            c=colors,
-            s=60
-        )
+    # ------------------------------------------------------------
+    # 8. Visualisasi Cluster
+    # ------------------------------------------------------------
+    st.subheader("Visualisasi Clustering")
 
-        ax.set_xlabel(f1)
-        ax.set_ylabel(f2)
-        ax.set_title("Visualisasi Daerah Rawan Kemiskinan vs Aman")
+    f1 = numeric_df.columns[0]
+    f2 = numeric_df.columns[1]
 
-        # Legend manual
-        handles = [
-            plt.Line2D([0], [0], marker='o', color='w', label='Rawan Kemiskinan', markerfacecolor='red', markersize=10),
-            plt.Line2D([0], [0], marker='o', color='w', label='Aman', markerfacecolor='green', markersize=10)
-        ]
-        ax.legend(handles=handles)
+    fig, ax = plt.subplots()
 
-        st.pyplot(fig)
+    colors = df["kategori"].map({
+        "Rawan Kemiskinan": "red",
+        "Aman": "green"
+    })
 
-        # ------------------------------------------------------------
-        # 9. Download hasil
-        # ------------------------------------------------------------
-        csv_out = df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Download Hasil (CSV)",
-            data=csv_out,
-            file_name="hasil_cluster_kemiskinan.csv",
-            mime="text/csv"
+    ax.scatter(
+        numeric_df[f1],
+        numeric_df[f2],
+        c=colors,
+        s=60
+    )
 
-        )
+    ax.set_xlabel(f1)
+    ax.set_ylabel(f2)
+    ax.set_title("Visualisasi Daerah Rawan Kemiskinan vs Aman")
 
+    # Legend
+    handles = [
+        plt.Line2D([0], [0], marker='o', color='w', label='Rawan Kemiskinan',
+                   markerfacecolor='red', markersize=10),
+        plt.Line2D([0], [0], marker='o', color='w', label='Aman',
+                   markerfacecolor='green', markersize=10)
+    ]
+    ax.legend(handles=handles)
+
+    st.pyplot(fig)
+
+    # ------------------------------------------------------------
+    # 9. Tombol Download
+    # ------------------------------------------------------------
+    csv_out = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="Download Hasil (CSV)",
+        data=csv_out,
+        file_name="hasil_cluster_kemiskinan.csv",
+        mime="text/csv"
+    )
