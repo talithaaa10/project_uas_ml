@@ -23,7 +23,7 @@ model, scaler = load_bundle()
 # 2. Auto-load CSV default
 # ------------------------------------------------------------
 def load_default_csv():
-    file = "datasetkemiskinan.csv"
+    file = "dataset_kemiskinan.csv"
     if os.path.exists(file):
         st.success(f"File default ditemukan dan dimuat otomatis: {file}")
         return pd.read_csv(file)
@@ -133,3 +133,4 @@ if df is not None:
             mime="text/csv"
 
         )
+
