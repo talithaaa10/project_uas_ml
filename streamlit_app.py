@@ -1,152 +1,111 @@
 import streamlit as st
+import json
 import pandas as pd
 import joblib
-import os
-import matplotlib.pyplot as plt
 
-st.title("Clustering Daerah Rawan Kemiskinan")
-st.write("Aplikasi ini mengelompokkan daerah menjadi kategori *Rawan Kemiskinan* dan *Aman* berdasarkan model K-Means.")
+st.set_page_config(page_title="Analisis Kemiskinan", layout="wide")
 
-# ------------------------------------------------------------
-# 1. Load model + scaler dari kmeans.pkl
-# ------------------------------------------------------------
-@st.cache_resource
-def load_bundle():
-    bundle = joblib.load("kmeans.pkl")
-    model = bundle["model"]      # KMeans
-    scaler = bundle["scaler"]    # StandardScaler
-    return model, scaler
+# TITLE
+st.title("📊 ANALISIS CLUSTERING KEMISKINAN JAWA BARAT")
+st.markdown("Proyek Machine Learning - Segmentasi Wilayah Berdasarkan Indikator Ekonomi")
 
-model, scaler = load_bundle()
+# LOAD DATA
+try:
+    # Load cluster analysis
+    with open('hasil_clustering.json', 'r') as f:
+        cluster_data = json.load(f)
+    
+    # Load dataset
+    df = pd.read_csv('datasetkemiskinan_final.csv')
+    
+    st.success("✅ Data berhasil dimuat")
+    
+except Exception as e:
+    st.error(f"❌ Error: {str(e)}")
+    st.stop()
 
-# ------------------------------------------------------------
-# 2. Auto-load CSV default
-# ------------------------------------------------------------
-def load_default_csv():
-    file = "datasetkemiskinan.csv"
-    if os.path.exists(file):
-        st.success(f"File default ditemukan dan dimuat otomatis: {file}")
-        return pd.read_csv(file)
-    st.warning("File default tidak ditemukan.")
-    return None
+# DASHBOARD
+st.header("📈 DASHBOARD")
 
-df = load_default_csv()
+# Metrics
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Akurasi Model", f"{cluster_data['skor_silhouette']:.3f}")
+with col2:
+    st.metric("Total Data", len(df))
+with col3:
+    st.metric("Periode", f"{df['Tahun'].min()}-{df['Tahun'].max()}")
 
-# ------------------------------------------------------------
-# 3. Upload CSV Opsional
-# ------------------------------------------------------------
-uploaded = st.file_uploader("Upload file CSV (opsional):", type=["csv"])
-if uploaded:
-    df = pd.read_csv(uploaded)
-    st.info("File upload digunakan menggantikan file default.")
+# CLUSTER ANALYSIS
+st.header("🎯 HASIL CLUSTERING")
 
-# ------------------------------------------------------------
-# 4. Lanjut jika ada dataset
-# ------------------------------------------------------------
-if df is not None:
-    st.subheader("Preview Data")
-    st.write(df.head())
+for i in range(3):
+    c = cluster_data['cluster'][str(i)]
+    
+    with st.expander(f"🔵 CLUSTER {i}: {c['kategori']} ({c['jumlah']} wilayah)"):
+        # Create columns for layout
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("📊 Indikator Ekonomi:")
+            st.write(f"• PDRB Rata-rata: *Rp {c['pdrb_rata']:,.0f}*")
+            st.write(f"• Garis Kemiskinan: Rp {c['garis_kemiskinan_rata']:,.0f}")
+        
+        with col2:
+            st.write("👥 Kondisi Sosial:")
+            st.write(f"• Penduduk Miskin: *{c['miskin_rata']:.1f} ribu*")
+            st.write(f"• Pengangguran: {c['pengangguran_rata']:,.0f} jiwa")
+        
+        st.write("📍 Contoh Wilayah:")
+        for wilayah in c['contoh_wilayah']:
+            st.write(f"- {wilayah}")
 
-    # Ambil hanya kolom numerik
-    numeric_df = df.select_dtypes(include=['int64', 'float64'])
+# PREDICTION FORM
+st.header("🔮 PREDIKSI CLUSTER BARU")
 
-    if numeric_df.shape[1] < 2:
-        st.error("Dataset membutuhkan minimal 2 kolom numerik.")
-        st.stop()
+with st.form("prediction_form"):
+    st.write("Masukkan data wilayah untuk prediksi:")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        pdrb = st.number_input("PDRB", min_value=10000.0, value=50000.0, step=10000.0)
+        penduduk = st.number_input("Jumlah Penduduk (ribu)", min_value=100.0, value=2000.0, step=100.0)
+    
+    with col2:
+        miskin = st.number_input("Penduduk Miskin (ribu)", min_value=10.0, value=150.0, step=10.0)
+        pengangguran = st.number_input("Pengangguran (jiwa)", min_value=1000, value=50000, step=1000)
+    
+    submit = st.form_submit_button("🚀 Prediksi")
+    
+    if submit:
+        try:
+            # Load model
+            bundle = joblib.load('kmeans.pkl')
+            model = bundle['model']
+            scaler = bundle['scaler']
+            
+            # Prepare input (use average garis_kemiskinan from cluster 0 as default)
+            garis_kemiskinan_default = 350000
+            input_data = [[penduduk, miskin, garis_kemiskinan_default, pengangguran, pdrb]]
+            input_scaled = scaler.transform(input_data)
+            
+            # Predict
+            prediction = model.predict(input_scaled)[0]
+            cluster_info = cluster_data['cluster'][str(prediction)]
+            
+            # Show result
+            st.success(f"✅ *Hasil Prediksi: Cluster {prediction}*")
+            st.info(f"*Kategori:* {cluster_info['kategori']}")
+            st.write(f"*Karakteristik serupa dengan wilayah:* {', '.join(cluster_info['contoh_wilayah'])}")
+            
+        except Exception as e:
+            st.error(f"Error dalam prediksi: {str(e)}")
 
-    # ------------------------------------------------------------
-    # FIX paling penting:
-    # Samakan kolom dataset dengan kolom saat scaler training
-    # ------------------------------------------------------------
-    try:
-        numeric_df = numeric_df[scaler.feature_names_in_]
-    except Exception as e:
-        st.error(
-            "Kolom dataset tidak cocok dengan model! "
-            "Dataset harus memiliki kolom numerik berikut (urutan wajib sama): "
-            + ", ".join(scaler.feature_names_in_)
-        )
-        st.stop()
+# DATA TABLE
+st.header("📋 DATA LENGKAP")
+st.dataframe(df, use_container_width=True)
 
-    # ------------------------------------------------------------
-    # 5. Scaling data
-    # ------------------------------------------------------------
-    scaled = scaler.transform(numeric_df)
-
-    # ------------------------------------------------------------
-    # 6. Prediksi cluster
-    # ------------------------------------------------------------
-    df["cluster"] = model.predict(scaled)
-
-    # Hitung rata-rata untuk menentukan cluster risiko tertinggi
-    cluster_means = df.groupby("cluster")[numeric_df.columns].mean()
-    risk_scores = cluster_means.mean(axis=1)
-    highest_risk_cluster = risk_scores.idxmax()
-
-    # Tambahkan kategori
-    df["kategori"] = df["cluster"].apply(
-        lambda c: "Rawan Kemiskinan" if c == highest_risk_cluster else "Aman"
-    )
-
-    # ------------------------------------------------------------
-    # 7. Tampilkan Hasil
-    # ------------------------------------------------------------
-    st.subheader("Kategori Daerah")
-    st.write(df)
-
-    # Daerah Rawan
-    st.subheader("Daerah Rawan Kemiskinan (🟥)")
-    st.write(df[df["kategori"] == "Rawan Kemiskinan"])
-
-    # Daerah Aman
-    st.subheader("Daerah Aman (🟩)")
-    st.write(df[df["kategori"] == "Aman"])
-
-    # ------------------------------------------------------------
-    # 8. Visualisasi Cluster
-    # ------------------------------------------------------------
-    st.subheader("Visualisasi Clustering")
-
-    f1 = numeric_df.columns[0]
-    f2 = numeric_df.columns[1]
-
-    fig, ax = plt.subplots()
-
-    colors = df["kategori"].map({
-        "Rawan Kemiskinan": "red",
-        "Aman": "green"
-    })
-
-    ax.scatter(
-        numeric_df[f1],
-        numeric_df[f2],
-        c=colors,
-        s=60
-    )
-
-    ax.set_xlabel(f1)
-    ax.set_ylabel(f2)
-    ax.set_title("Visualisasi Daerah Rawan Kemiskinan vs Aman")
-
-    # Legend
-    handles = [
-        plt.Line2D([0], [0], marker='o', color='w', label='Rawan Kemiskinan',
-                   markerfacecolor='red', markersize=10),
-        plt.Line2D([0], [0], marker='o', color='w', label='Aman',
-                   markerfacecolor='green', markersize=10)
-    ]
-    ax.legend(handles=handles)
-
-    st.pyplot(fig)
-
-    # ------------------------------------------------------------
-    # 9. Tombol Download
-    # ------------------------------------------------------------
-    csv_out = df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="Download Hasil (CSV)",
-        data=csv_out,
-        file_name="hasil_cluster_kemiskinan.csv",
-        mime="text/csv"
-    )
-
+# FOOTER
+st.divider()
+st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
