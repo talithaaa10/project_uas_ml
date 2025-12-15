@@ -11,9 +11,6 @@ st.markdown("Proyek Machine Learning - Segmentasi Wilayah Berdasarkan Indikator 
 
 # LOAD DATA
 try:
-    # Load cluster analysis
-    with open('hasil_clustering.json', 'r') as f:
-        cluster_data = json.load(f)
     
     # Load dataset
     df = pd.read_csv('datasetkemiskinan_final.csv')
@@ -109,3 +106,4 @@ st.dataframe(df, use_container_width=True)
 # FOOTER
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
