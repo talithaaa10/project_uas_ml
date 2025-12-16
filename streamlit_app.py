@@ -67,9 +67,9 @@ st.header("🔍 Exploratory Data Analysis")
 # Line Plot – Tren Penduduk Miskin
 st.subheader("Tren Penduduk Miskin")
 
-trend = df.groupby('Tahun')['Miskin'].sum().reset_index()
+trend = df.groupby('Tahun')['jumlah_penduduk_miskin'].sum().reset_index()
 fig, ax = plt.subplots()
-ax.plot(trend['Tahun'], trend['Miskin'], marker='o')
+ax.plot(trend['Tahun'], trend['jumlah_penduduk_miskin'], marker='o')
 ax.set_xlabel("Tahun")
 ax.set_ylabel("Penduduk Miskin")
 ax.grid(True)
@@ -79,7 +79,7 @@ st.pyplot(fig)
 st.subheader("Hubungan PDRB dan Kemiskinan")
 
 fig, ax = plt.subplots()
-ax.scatter(df['PDRB'], df['Miskin'])
+ax.scatter(df['PDRB'], df['jumlah_penduduk_miskin'])
 ax.set_xlabel("PDRB")
 ax.set_ylabel("Penduduk Miskin")
 ax.grid(True)
@@ -95,7 +95,7 @@ for i in sorted(df['Cluster'].unique()):
 
     kategori = (
         "Kemiskinan Tinggi"
-        if data_c['Miskin'].mean() > df['Miskin'].mean()
+        if data_c['jumlah_penduduk_miskin'].mean() > df['Miskin'].mean()
         else "Kemiskinan Rendah"
     )
 
@@ -109,7 +109,7 @@ for i in sorted(df['Cluster'].unique()):
 
         with col2:
             st.write("**Kondisi Sosial:**")
-            st.write(f"- Penduduk Miskin: {data_c['Miskin'].mean():.1f} ribu")
+            st.write(f"- Penduduk Miskin: {data_c['jumlah_penduduk_miskin'].mean():.1f} ribu")
             st.write(f"- Pengangguran: {data_c['Pengangguran'].mean():,.0f} jiwa")
 
         st.write("**Contoh Wilayah:**")
@@ -153,6 +153,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
