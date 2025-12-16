@@ -1,150 +1,130 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import joblib
+import matplotlib.pyplot as plt
 
-# ==================== CONFIG ====================
 st.set_page_config(
-    page_title="Analisis Clustering Kemiskinan Jabar",
-    page_icon="📊",
+    page_title="Analisis Clustering Kemiskinan",
     layout="wide"
 )
 
-# ==================== LOAD DATA ====================
+# =========================
+# TITLE
+# =========================
+st.title("📊 ANALISIS CLUSTERING KEMISKINAN JAWA BARAT")
+st.markdown(
+    "Aplikasi ini melakukan analisis dan segmentasi wilayah menggunakan metode *K-Means Clustering* "
+    "berdasarkan indikator ekonomi."
+)
+
+# =========================
+# LOAD DATA & MODEL
+# =========================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("datasetkemiskinan_final.csv")
-    df_raw = pd.read_csv("dataset_kemiskinan.csv")
-    return df, df_raw
+    return pd.read_csv("datasetkemiskinan_final.csv")
 
 @st.cache_resource
 def load_model():
-    model = joblib.load("kmeans.pkl")
-    return model
+    bundle = joblib.load("kmeans.pkl")
+    return bundle["model"], bundle["scaler"]
 
-# ==================== CLUSTERING ====================
-def apply_clustering(df, model):
-    fitur = [
-        "jumlah_warga_jabar",
-        "jumlah_penduduk_miskin",
-        "garis_kemiskinan",
-        "jumlah_pengangguran",
-        "PDRB"
-    ]
+df = load_data()
+model, scaler = load_model()
 
-    X = df[fitur]
-    df["Cluster"] = model.predict(X)
-    return df
-
-# ==================== EDA ====================
-def line_plot(df_raw):
-    yearly = df_raw.groupby("Tahun").agg({
-        "jumlah_penduduk_miskin": "sum",
-        "garis_kemiskinan": "mean"
-    }).reset_index()
-
-    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
-
-    ax[0].plot(yearly["Tahun"], yearly["jumlah_penduduk_miskin"], marker="o")
-    ax[0].set_title("Tren Penduduk Miskin")
-
-    ax[1].plot(yearly["Tahun"], yearly["garis_kemiskinan"], marker="o")
-    ax[1].set_title("Tren Garis Kemiskinan")
-
-    plt.tight_layout()
-    return fig
+features = [
+    'jumlah_warga_jabar',
+    'jumlah_penduduk_miskin',
+    'garis_kemiskinan',   
+    'jumlah_pengangguran',
+    'PDRB'                      
+]
+X = df[features]
+scaled_features = scaler.fit_transform(df[features])
 
 
-def box_plot(df_raw):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.boxplot(data=df_raw, x="Tahun", y="jumlah_penduduk_miskin", ax=ax)
-    ax.set_title("Distribusi Penduduk Miskin")
-    return fig
+st.success("✅ Dataset dan model berhasil dimuat")
 
+# =========================
+# DASHBOARD METRIC
+# =========================
+st.header("📈 Ringkasan Data")
 
-def correlation_plot(df_raw):
-    df_2019 = df_raw[df_raw["Tahun"] == 2019]
-    corr = df_2019.select_dtypes(include=np.number).corr()
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
+with col2:
+    st.metric("Total Data", len(df))
+with col3:
+    st.metric("Periode", f"{df['Tahun'].min()} - {df['Tahun'].max()}")
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
-    ax.set_title("Matriks Korelasi (2019)")
-    return fig
+# =========================
+# EDA SECTION
+# =========================
+st.header("🔍 Exploratory Data Analysis")
 
-# ==================== MAIN ====================
-def main():
-    df, df_raw = load_data()
-    model = load_model()
-    df = apply_clustering(df, model)
+# Line Plot – Tren Penduduk Miskin
+st.subheader("Tren Penduduk Miskin")
 
-    st.sidebar.title("📊 Menu")
-    menu = st.sidebar.radio(
-        "Pilih Halaman",
-        ["Dashboard", "EDA", "Hasil Clustering", "Database", "Insight"]
+trend = df.groupby('Tahun')['jumlah_penduduk_miskin'].sum().reset_index()
+fig, ax = plt.subplots()
+ax.plot(trend['Tahun'], trend['jumlah_penduduk_miskin'], marker='o')
+ax.set_xlabel("Tahun")
+ax.set_ylabel("Penduduk Miskin")
+ax.grid(True)
+st.pyplot(fig)
+
+# Scatter Plot – PDRB vs Kemiskinan
+st.subheader("Hubungan PDRB dan Kemiskinan")
+
+fig, ax = plt.subplots()
+ax.scatter(df['PDRB'], df['jumlah_penduduk_miskin'])
+ax.set_xlabel("PDRB")
+ax.set_ylabel("Penduduk Miskin")
+ax.grid(True)
+st.pyplot(fig)
+
+# =========================
+# CLUSTER ANALYSIS
+# =========================
+st.header("🎯 Hasil Clustering")
+
+for i in sorted(df['Cluster'].unique()):
+    data_c = df[df['Cluster'] == i]
+
+    kategori = (
+        "Kemiskinan Tinggi"
+        if data_c['jumlah_penduduk_miskin'].mean() > df['jumlah_penduduk_miskin'].mean()
+        else "Kemiskinan Rendah"
     )
 
-    # ========== DASHBOARD ==========
-    if menu == "Dashboard":
-        st.title("📊 Dashboard Clustering Kemiskinan Jawa Barat")
+    with st.expander(f"🔵 Cluster {i} – {kategori}"):
+        col1, col2 = st.columns(2)
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Data", len(df))
-        col2.metric("Jumlah Wilayah", df["kabupaten_kota"].nunique())
-        col3.metric("Jumlah Cluster", df["Cluster"].nunique())
+        with col1:
+            st.write("*Indikator Ekonomi (Rata-rata):*")
+            st.write(f"- PDRB: Rp {data_c['PDRB'].mean():,.0f}")
+            st.write(f"- Garis Kemiskinan: Rp {data_c['garis_kemiskinan'].mean():,.0f}")
 
-        st.divider()
-        st.subheader("Distribusi Cluster")
-        st.bar_chart(df["Cluster"].value_counts())
+        with col2:
+            st.write("*Kondisi Sosial:*")
+            st.write(f"- Penduduk Miskin: {data_c['jumlah_penduduk_miskin'].mean():.1f} ribu")
+            st.write(f"- Pengangguran: {data_c['jumlah_pengangguran'].mean():,.0f} jiwa")
 
-    # ========== EDA ==========
-    elif menu == "EDA":
-        st.title("📈 Exploratory Data Analysis")
-        st.pyplot(line_plot(df_raw))
-        st.pyplot(box_plot(df_raw))
-        st.pyplot(correlation_plot(df_raw))
+        st.write("*Contoh Wilayah:*")
+        for w in data_c['kabupaten_kota'].unique()[:5]:
+            st.write(f"- {w}")
 
-    # ========== CLUSTERING ==========
-    elif menu == "Hasil Clustering":
-        st.title("🎯 Hasil Clustering")
 
-        for i in sorted(df["Cluster"].unique()):
-            cluster_df = df[df["Cluster"] == i]
+# =========================
+# DATA TABLE
+# =========================
+st.header("📋 Data Lengkap")
+st.dataframe(df, use_container_width=True)
 
-            st.subheader(f"Cluster {i}")
-            st.write(f"Jumlah Wilayah: {cluster_df['kabupaten_kota'].nunique()}")
-            st.write(f"PDRB Rata-rata: Rp {cluster_df['PDRB'].mean():,.0f}")
-            st.write(f"Penduduk Miskin Rata-rata: {cluster_df['jumlah_penduduk_miskin'].mean():.1f} ribu")
-
-            with st.expander("Lihat Wilayah"):
-                for w in cluster_df["kabupaten_kota"].unique():
-                    st.write(f"• {w}")
-
-            st.divider()
-
-    # ========== DATABASE ==========
-    elif menu == "Database":
-        st.title("📋 Database")
-        st.dataframe(df, use_container_width=True)
-
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "📥 Download CSV",
-            csv,
-            "hasil_clustering.csv",
-            "text/csv"
-        )
-
-    # ========== INSIGHT ==========
-    else:
-        st.title("💡 Insight & Rekomendasi")
-        st.write("""
-        - Wilayah dengan PDRB rendah cenderung masuk cluster kemiskinan tinggi  
-        - Cluster tertentu membutuhkan intervensi prioritas  
-        - Pendekatan berbasis data wilayah meningkatkan efektivitas kebijakan  
-        """)
-
-# ==================== RUN ====================
-if __name__ == "__main__":
-    main()
+# =========================
+# FOOTER
+# =========================
+st.divider()
+st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
