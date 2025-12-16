@@ -19,17 +19,20 @@ def load_data():
     df_raw = pd.read_csv("dataset_kemiskinan.csv")
     return df, df_raw
 
-
 @st.cache_resource
 def load_model():
-    bundle = joblib.load("kmeans.pkl")
-    model = bundle["model"]
-    scaler = bundle["scaler"]
-    return model, scaler
+    model = joblib.load("kmeans.pkl")
+    return model
 
+# ==================== KETERANGAN CLUSTER ====================
+CLUSTER_LABEL = {
+    0: "Kemiskinan Rendah",
+    1: "Kemiskinan Sedang",
+    2: "Kemiskinan Tinggi"
+}
 
 # ==================== CLUSTERING ====================
-def apply_clustering(df, model, scaler):
+def apply_clustering(df, model):
     fitur = [
         "jumlah_warga_jabar",
         "jumlah_penduduk_miskin",
@@ -39,10 +42,8 @@ def apply_clustering(df, model, scaler):
     ]
 
     X = df[fitur]
-    X_scaled = scaler.transform(X)
-    df["Cluster"] = model.predict(X_scaled)
+    df["Cluster"] = model.predict(X)
     return df
-
 
 # ==================== EDA ====================
 def line_plot(df_raw):
@@ -79,12 +80,11 @@ def correlation_plot(df_raw):
     ax.set_title("Matriks Korelasi (2019)")
     return fig
 
-
 # ==================== MAIN ====================
 def main():
     df, df_raw = load_data()
-    model, scaler = load_model()
-    df = apply_clustering(df, model, scaler)
+    model = load_model()
+    df = apply_clustering(df, model)
 
     st.sidebar.title("📊 Menu")
     menu = st.sidebar.radio(
@@ -105,6 +105,10 @@ def main():
         st.subheader("Distribusi Cluster")
         st.bar_chart(df["Cluster"].value_counts())
 
+        st.subheader("Keterangan Cluster")
+        for k, v in CLUSTER_LABEL.items():
+            st.write(f"Cluster {k} : {v}")
+
     # ========== EDA ==========
     elif menu == "EDA":
         st.title("📈 Exploratory Data Analysis")
@@ -112,14 +116,14 @@ def main():
         st.pyplot(box_plot(df_raw))
         st.pyplot(correlation_plot(df_raw))
 
-    # ========== CLUSTERING ==========
+    # ========== HASIL CLUSTERING ==========
     elif menu == "Hasil Clustering":
         st.title("🎯 Hasil Clustering")
 
         for i in sorted(df["Cluster"].unique()):
             cluster_df = df[df["Cluster"] == i]
 
-            st.subheader(f"Cluster {i}")
+            st.subheader(f"Cluster {i} - {CLUSTER_LABEL[i]}")
             st.write(f"Jumlah Wilayah: {cluster_df['kabupaten_kota'].nunique()}")
             st.write(f"PDRB Rata-rata: Rp {cluster_df['PDRB'].mean():,.0f}")
             st.write(
@@ -133,7 +137,7 @@ def main():
 
             st.divider()
 
-    # ========== DATASET ==========
+    # ========== DATABASE ==========
     elif menu == "Dataset":
         st.title("📋 Dataset")
         st.dataframe(df, use_container_width=True)
@@ -147,9 +151,6 @@ def main():
         )
 
 
-
 # ==================== RUN ====================
 if __name__ == "__main__":
     main()
-
-
