@@ -53,7 +53,7 @@ st.header("📈 Ringkasan Data")
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Jumlah Wilayah", df['Kabupaten_kota'].nunique())
+    st.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
 with col2:
     st.metric("Total Data", len(df))
 with col3:
@@ -153,6 +153,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
