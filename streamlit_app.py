@@ -33,9 +33,17 @@ def load_model():
 df = load_data()
 model, scaler = load_model()
 
-fitur = ['Penduduk', 'Miskin', 'Garis_Kemiskinan', 'Pengangguran', 'PDRB']
-X_scaled = scaler.transform(df[fitur])
-df['Cluster'] = model.predict(X_scaled)
+features = [
+    'jumlah_warga_jabar',
+    'jumlah_penduduk_miskin',
+    'garis_kemiskinan',   
+    'jumlah_pengangguran',
+    'PDRB'                      
+]
+X = df[features]
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(df[features])
+
 
 st.success("✅ Dataset dan model berhasil dimuat")
 
@@ -146,3 +154,4 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
