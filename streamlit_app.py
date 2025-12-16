@@ -110,7 +110,7 @@ for i in sorted(df['Cluster'].unique()):
         with col2:
             st.write("**Kondisi Sosial:**")
             st.write(f"- Penduduk Miskin: {data_c['jumlah_penduduk_miskin'].mean():.1f} ribu")
-            st.write(f"- Pengangguran: {data_c['Pengangguran'].mean():,.0f} jiwa")
+            st.write(f"- Pengangguran: {data_c['jumlah_pengangguran'].mean():,.0f} jiwa")
 
         st.write("**Contoh Wilayah:**")
         for w in data_c['kabupaten_kota'].unique()[:5]:
