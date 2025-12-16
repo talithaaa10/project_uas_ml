@@ -89,7 +89,7 @@ def main():
     st.sidebar.title("📊 Menu")
     menu = st.sidebar.radio(
         "Pilih Halaman",
-        ["Dashboard", "EDA", "Hasil Clustering", "Database", "Insight"]
+        ["Dashboard", "EDA", "Hasil Clustering", "Dataset"]
     )
 
     # ========== DASHBOARD ==========
@@ -133,7 +133,7 @@ def main():
 
             st.divider()
 
-    # ========== DATABASE ==========
+    # ========== DATASET ==========
     elif menu == "Dataset":
         st.title("📋 Dataset")
         st.dataframe(df, use_container_width=True)
@@ -151,4 +151,5 @@ def main():
 # ==================== RUN ====================
 if __name__ == "__main__":
     main()
+
 
