@@ -116,31 +116,6 @@ for i in sorted(df['Cluster'].unique()):
         for w in data_c['kabupaten_kota'].unique()[:5]:
             st.write(f"- {w}")
 
-# =========================
-# PREDICTION FORM
-# =========================
-st.header("🔮 Prediksi Cluster Wilayah Baru")
-
-with st.form("form_prediksi"):
-    col1, col2 = st.columns(2)
-
-    with col1:
-        penduduk = st.number_input("Jumlah Penduduk (ribu)", 100.0, 10000.0, 2000.0)
-        miskin = st.number_input("Penduduk Miskin (ribu)", 10.0, 5000.0, 150.0)
-        garis = st.number_input("Garis Kemiskinan", 200000.0, 800000.0, 350000.0)
-
-    with col2:
-        pengangguran = st.number_input("Pengangguran (jiwa)", 1000, 500000, 50000)
-        pdrb = st.number_input("PDRB", 10000.0, 500000.0, 50000.0)
-
-    submit = st.form_submit_button("Prediksi")
-
-    if submit:
-        input_data = [[penduduk, miskin, garis, pengangguran, pdrb]]
-        input_scaled = scaler.transform(input_data)
-        pred = model.predict(input_scaled)[0]
-
-        st.success(f"Hasil Prediksi: **Cluster {pred}**")
 
 # =========================
 # DATA TABLE
@@ -153,6 +128,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
