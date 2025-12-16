@@ -105,7 +105,7 @@ for i in sorted(df['Cluster'].unique()):
         with col1:
             st.write("**Indikator Ekonomi (Rata-rata):**")
             st.write(f"- PDRB: Rp {data_c['PDRB'].mean():,.0f}")
-            st.write(f"- Garis Kemiskinan: Rp {data_c['garis_Kemiskinan'].mean():,.0f}")
+            st.write(f"- Garis Kemiskinan: Rp {data_c['garis_kemiskinan'].mean():,.0f}")
 
         with col2:
             st.write("**Kondisi Sosial:**")
@@ -153,6 +153,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
