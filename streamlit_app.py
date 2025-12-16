@@ -41,7 +41,6 @@ features = [
     'PDRB'                      
 ]
 X = df[features]
-scaler = StandardScaler()
 scaled_features = scaler.fit_transform(df[features])
 
 
@@ -154,4 +153,5 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
