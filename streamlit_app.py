@@ -134,8 +134,8 @@ def main():
             st.divider()
 
     # ========== DATABASE ==========
-    elif menu == "Database":
-        st.title("📋 Database")
+    elif menu == "Dataset":
+        st.title("📋 Dataset")
         st.dataframe(df, use_container_width=True)
 
         csv = df.to_csv(index=False).encode("utf-8")
@@ -146,16 +146,9 @@ def main():
             "text/csv"
         )
 
-    # ========== INSIGHT ==========
-    else:
-        st.title("💡 Insight & Rekomendasi")
-        st.write("""
-        - Wilayah dengan PDRB rendah cenderung masuk cluster kemiskinan tinggi  
-        - Cluster tertentu membutuhkan intervensi prioritas  
-        - Pendekatan berbasis data wilayah meningkatkan efektivitas kebijakan  
-        """)
 
 
 # ==================== RUN ====================
 if __name__ == "__main__":
     main()
+
