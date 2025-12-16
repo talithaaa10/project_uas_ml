@@ -95,7 +95,7 @@ for i in sorted(df['Cluster'].unique()):
 
     kategori = (
         "Kemiskinan Tinggi"
-        if data_c['jumlah_penduduk_miskin'].mean() > df['Miskin'].mean()
+        if data_c['jumlah_penduduk_miskin'].mean() > df['jumlah_penduduk_miskin'].mean()
         else "Kemiskinan Rendah"
     )
 
@@ -153,6 +153,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
