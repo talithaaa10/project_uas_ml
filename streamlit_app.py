@@ -113,7 +113,7 @@ for i in sorted(df['Cluster'].unique()):
             st.write(f"- Pengangguran: {data_c['Pengangguran'].mean():,.0f} jiwa")
 
         st.write("**Contoh Wilayah:**")
-        for w in data_c['Wilayah'].unique()[:5]:
+        for w in data_c['kabupaten_kota'].unique()[:5]:
             st.write(f"- {w}")
 
 # =========================
@@ -153,6 +153,7 @@ st.dataframe(df, use_container_width=True)
 # =========================
 st.divider()
 st.caption("Proyek Akhir Machine Learning | Teknik Informatika | 2025")
+
 
 
 
