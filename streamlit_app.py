@@ -4,168 +4,169 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
-import os
+from io import BytesIO
 
-# ==================== CONFIG ====================
+# ==================== SETUP ====================
 st.set_page_config(
-    page_title="Analisis Kemiskinan Jawa Barat",
+    page_title="Analisis Clustering Kemiskinan Jabar",
     page_icon="📊",
     layout="wide"
 )
 
-# ==================== CLUSTER LABEL ====================
-CLUSTER_NAMES = {
-    "0": "Cluster 0 (Kemiskinan Rendah)",
-    "1": "Cluster 1 (Kemiskinan Sedang)",
-    "2": "Cluster 2 (Kemiskinan Tinggi)"
-}
-
-# ==================== LOAD DATA ====================
+# ==================== FUNCTIONS ====================
 @st.cache_data
 def load_data():
-    if not os.path.exists("datasetkemiskinan_final.csv"):
-        st.error("datasetkemiskinan_final.csv tidak ditemukan")
-        st.stop()
-
-    if not os.path.exists("dataset_kemiskinan.csv"):
-        st.error("dataset_kemiskinan.csv tidak ditemukan")
-        st.stop()
-
-    df = pd.read_csv("datasetkemiskinan_final.csv")
-    df_raw = pd.read_csv("dataset_kemiskinan.csv")
-
-    df["Tahun"] = df["Tahun"].astype(int)
-
+    """Load dataset"""
+    df = pd.read_csv('datasetkemiskinan_final.csv')
+    df_raw = pd.read_csv('dataset_kemiskinan.csv')
     return df, df_raw
 
-# ==================== LOAD MODEL ====================
 @st.cache_resource
 def load_model():
-    if not os.path.exists("kmeans.pkl"):
-        st.error("File kmeans.pkl tidak ditemukan")
-        st.stop()
-
+    """Load KMeans model"""
     bundle = joblib.load("kmeans.pkl")
-
     return bundle["model"], bundle["scaler"]
 
-# ==================== APPLY CLUSTER ====================
 def apply_clustering(df, model, scaler):
     fitur = [
-        "jumlah_warga_jabar",
-        "jumlah_penduduk_miskin",
-        "garis_kemiskinan",
-        "jumlah_pengangguran",
-        "PDRB"
+        'jumlah_warga_jabar',
+        'jumlah_penduduk_miskin',
+        'garis_kemiskinan',
+        'jumlah_pengangguran',
+        'PDRB'
     ]
 
     X = df[fitur]
     X_scaled = scaler.transform(X)
-
-    df["Cluster"] = model.predict(X_scaled).astype(str)
-    df["Cluster Label"] = df["Cluster"].map(CLUSTER_NAMES)
-
+    df["Cluster"] = model.predict(X_scaled)
     return df
 
-# ==================== VISUAL ====================
-def scatter_plot(df):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.scatterplot(
-        data=df,
-        x="PDRB",
-        y="jumlah_penduduk_miskin",
-        hue="Cluster Label",
-        size="jumlah_pengangguran",
-        ax=ax
-    )
-    ax.set_title("PDRB vs Penduduk Miskin")
-    ax.grid(True, alpha=0.3)
+def build_cluster_data(df):
+    """Mengganti isi hasil_clustering.json"""
+    cluster_data = {
+        "skor_silhouette": 0.0,
+        "skor_davies_bouldin": 0.0,
+        "cluster": {}
+    }
+
+    for i in sorted(df["Cluster"].unique()):
+        cdf = df[df["Cluster"] == i]
+
+        cluster_data["cluster"][str(i)] = {
+            "kategori": f"Cluster {i}",
+            "jumlah": len(cdf),
+            "pdrb_rata": cdf["PDRB"].mean(),
+            "miskin_rata": cdf["jumlah_penduduk_miskin"].mean(),
+            "garis_kemiskinan_rata": cdf["garis_kemiskinan"].mean(),
+            "pengangguran_rata": cdf["jumlah_pengangguran"].mean(),
+            "contoh_wilayah": cdf["kabupaten_kota"].unique()[:5].tolist()
+        }
+
+    return cluster_data
+
+# ==================== VISUAL FUNCTIONS (TETAP) ====================
+def create_line_plot(df_raw):
+    annual_stats = df_raw.groupby('Tahun').agg({
+        'jumlah_penduduk_miskin': 'sum',
+        'garis_kemiskinan': 'mean'
+    }).reset_index()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+
+    ax1.plot(annual_stats['Tahun'], annual_stats['jumlah_penduduk_miskin'], marker='o')
+    ax1.set_title('Tren Total Penduduk Miskin')
+
+    ax2.plot(annual_stats['Tahun'], annual_stats['garis_kemiskinan'], marker='o')
+    ax2.set_title('Tren Garis Kemiskinan')
+
+    plt.tight_layout()
     return fig
 
-# ==================== MAIN ====================
+def create_box_plots(df_raw):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    sns.boxplot(data=df_raw, x='Tahun', y='jumlah_penduduk_miskin', ax=ax1)
+    sns.boxplot(data=df_raw, x='Tahun', y='jumlah_pengangguran', ax=ax2)
+    plt.tight_layout()
+    return fig
+
+def create_scatter_plot(df_raw):
+    df_2019 = df_raw[df_raw['Tahun'] == 2019]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.scatter(df_2019['PDRB'], df_2019['jumlah_penduduk_miskin'], alpha=0.6)
+    ax.set_title("PDRB vs Penduduk Miskin (2019)")
+    return fig
+
+def create_correlation_matrix(df_raw):
+    df_2019 = df_raw[df_raw['Tahun'] == 2019]
+    corr = df_2019[['jumlah_warga_jabar','jumlah_penduduk_miskin',
+                    'garis_kemiskinan','jumlah_pengangguran','PDRB']].corr()
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax)
+    return fig
+
+def create_cluster_comparison(cluster_data):
+    clusters = list(cluster_data["cluster"].keys())
+    pdrb = [cluster_data["cluster"][c]["pdrb_rata"] for c in clusters]
+    miskin = [cluster_data["cluster"][c]["miskin_rata"] for c in clusters]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    ax1.bar(clusters, pdrb)
+    ax1.set_title("PDRB Rata-rata")
+
+    ax2.bar(clusters, miskin)
+    ax2.set_title("Penduduk Miskin Rata-rata")
+
+    plt.tight_layout()
+    return fig
+
+# ==================== MAIN APP ====================
 def main():
     df, df_raw = load_data()
     model, scaler = load_model()
     df = apply_clustering(df, model, scaler)
+    cluster_data = build_cluster_data(df)
 
     # ===== SIDEBAR =====
     with st.sidebar:
-        st.title("📊 Menu")
+        st.title("📊 Menu Analisis")
         menu = st.radio(
-            "Pilih Menu",
-            ["🏠 Dashboard", "📈 EDA", "🎯 Clustering", "📋 Dataset"]
+            "Pilih Analisis:",
+            ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering",
+             "📋 Dataset", "💡 Insight & Rekomendasi"]
         )
 
     # ===== DASHBOARD =====
     if menu == "🏠 Dashboard":
-        st.title("Dashboard Analisis Kemiskinan Jawa Barat")
+        st.title("📊 DASHBOARD ANALISIS CLUSTERING")
 
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Jumlah Wilayah", df["kabupaten_kota"].nunique())
-        col2.metric("Rata-rata PDRB", f"Rp {df['PDRB'].mean():,.0f}")
-        col3.metric("Total Penduduk Miskin", f"{df['jumlah_penduduk_miskin'].sum():,.0f}")
-        col4.metric("Jumlah Cluster", df["Cluster"].nunique())
+        col1.metric("Total Data", len(df))
+        col2.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
+        col3.metric("Periode Data", f"{df['Tahun'].min()}-{df['Tahun'].max()}")
+        col4.metric("Jumlah Cluster", df['Cluster'].nunique())
 
-        st.divider()
+        st.subheader("📊 Visualisasi Cepat")
+        st.pyplot(create_cluster_comparison(cluster_data))
 
-        cluster_count = df["Cluster Label"].value_counts()
+    elif menu == "📈 EDA & Visualisasi":
+        st.pyplot(create_line_plot(df_raw))
+        st.pyplot(create_box_plots(df_raw))
+        st.pyplot(create_scatter_plot(df_raw))
+        st.pyplot(create_correlation_matrix(df_raw))
 
-        fig, ax = plt.subplots()
-        cluster_count.plot(kind="bar", ax=ax)
-        ax.set_title("Jumlah Wilayah per Cluster")
-        st.pyplot(fig)
+    elif menu == "🎯 Hasil Clustering":
+        for i in cluster_data["cluster"]:
+            c = cluster_data["cluster"][i]
+            st.subheader(f"Cluster {i}")
+            st.write(c)
 
-    # ===== EDA =====
-    elif menu == "📈 EDA":
-        st.title("Exploratory Data Analysis")
+    elif menu == "📋 Dataset":
+        st.dataframe(df, use_container_width=True)
 
-        yearly = df_raw.groupby("Tahun")["jumlah_penduduk_miskin"].sum()
-
-        fig, ax = plt.subplots()
-        ax.plot(yearly.index, yearly.values, marker="o")
-        ax.set_title("Tren Penduduk Miskin")
-        ax.set_xlabel("Tahun")
-        ax.set_ylabel("Jumlah Penduduk Miskin")
-        ax.grid(True)
-
-        st.pyplot(fig)
-
-    # ===== CLUSTERING =====
-    elif menu == "🎯 Clustering":
-        st.title("Hasil Clustering")
-
-        st.pyplot(scatter_plot(df))
-
-        for c in sorted(df["Cluster"].unique()):
-            c_data = df[df["Cluster"] == c]
-            st.subheader(CLUSTER_NAMES[c])
-
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Rata-rata PDRB", f"Rp {c_data['PDRB'].mean():,.0f}")
-            col2.metric("Penduduk Miskin", f"{c_data['jumlah_penduduk_miskin'].mean():.1f}")
-            col3.metric("Pengangguran", f"{c_data['jumlah_pengangguran'].mean():,.0f}")
-
-    # ===== DATASET =====
     else:
-        st.title("Dataset")
+        st.info("Insight & rekomendasi tetap sama seperti versi JSON")
 
-        cluster_filter = st.multiselect(
-            "Pilih Cluster",
-            sorted(df["Cluster"].unique()),
-            default=sorted(df["Cluster"].unique())
-        )
-
-        filtered = df[df["Cluster"].isin(cluster_filter)]
-        st.dataframe(filtered, use_container_width=True)
-
-        csv = filtered.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "Download CSV",
-            csv,
-            "hasil_clustering.csv",
-            "text/csv"
-        )
-
-# ==================== RUN ====================
+# ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
