@@ -183,13 +183,9 @@ def main():
         menu = st.radio(
             "Pilih Analisis:",
             ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", 
-             "📋 Database", "💡 Insight & Rekomendasi"]
+             "📋 Database"]
         )
         
-        st.divider()
-        st.markdown("*Metrik Evaluasi:*")
-        st.metric("Silhouette Score", f"{cluster_data['skor_silhouette']:.3f}")
-        st.metric("Davies-Bouldin", f"{cluster_data['skor_davies_bouldin']:.3f}")
         
         st.divider()
         st.caption("Proyek Clustering Kemiskinan")
@@ -405,99 +401,8 @@ def main():
             mime="text/csv"
         )
     
-    # ===== INSIGHT & REKOMENDASI =====
-    else:
-        st.title("💡 INSIGHT & REKOMENDASI")
-        st.markdown("*Analisis dan Rekomendasi Berbasis Hasil Clustering*")
-        
-        # Key Insights
-        st.subheader("📊 Key Insights")
-        
-        insight_col1, insight_col2 = st.columns(2)
-        
-        with insight_col1:
-            st.info("""
-            *🔍 Pola yang Ditemukan:*
-            
-            1. *Cluster 0 (Ekonomi Tinggi):*
-               • PDRB rata-rata: *Rp 70 juta*
-               • Penduduk miskin: *201 ribu* (masih tinggi)
-               • Dominan wilayah: *Bogor, Karawang, Bekasi*
-            
-            2. *Cluster 1 (Ekonomi Menengah):*
-               • PDRB rata-rata: *Rp 38 juta*
-               • Penduduk miskin: *55 ribu* (relatif rendah)
-               • Karakteristik: *stabil, perlu pemantapan*
-            """)
-        
-        with insight_col2:
-            st.warning("""
-            3. *Cluster 2 (Perlu Perhatian):*
-               • PDRB rata-rata: *Rp 25 juta* (terendah)
-               • Penduduk miskin: *187 ribu* (tinggi)
-               • Pengangguran: *71,599 jiwa* (tinggi)
-               • *42% data* termasuk cluster ini
-            
-            *🎯 Prioritas:*
-            • Cluster 2 butuh *intervensi khusus*
-            • Fokus pada *pengentasan kemiskinan*
-            • Program *padat karya prioritas*
-            """)
-        
-        # Recommendations
-        st.subheader("🎯 Rekomendasi Kebijakan")
-        
-        tabs = st.tabs(["Cluster 0", "Cluster 1", "Cluster 2"])
-        
-        with tabs[0]:
-            st.write("""
-            *🔵 CLUSTER 0 - EKONOMI TINGGI*
-            
-            *Strategi:* Pertahankan & Tingkatkan
-            1. *Pertahankan pertumbuhan ekonomi*
-            2. *Tingkatkan kualitas SDM* (pendidikan vokasi)
-            3. *Kurangi kesenjangan* di dalam wilayah
-            4. *Kembangkan ekonomi kreatif & digital*
-            """)
-        
-        with tabs[1]:
-            st.write("""
-            *🟣 CLUSTER 1 - EKONOMI MENENGAH*
-            
-            *Strategi:* Akselerasi & Transformasi
-            1. *Dorong investasi* di sektor strategis
-            2. *Kembangkan UMKM* dengan teknologi
-            3. *Perbaiki infrastruktur* dasar
-            4. *Tingkatkan akses* pendidikan & kesehatan
-            """)
-        
-        with tabs[2]:
-            st.write("""
-            *🟠 CLUSTER 2 - PERLU PERHATIAN*
-            
-            *Strategi:* Intervensi Intensif
-            1. *Program padat karya* prioritas
-            2. *Bantuan sosial terfokus* (PKH, BPNT)
-            3. *Pelatihan vokasi* untuk keterampilan kerja
-            4. *Bantuan modal UMKM* bunga rendah
-            5. *Perbaiki infrastruktur* dasar (jalan, air, listrik)
-            """)
-        
-        # Implementation
-        st.subheader("🔄 Kerangka Implementasi")
-        
-        st.write("""
-        *📋 Monitoring Framework:*
-        • *Indikator:* Penurunan penduduk miskin, peningkatan PDRB
-        • *Timeline:* Evaluasi triwulanan
-        • *Stakeholder:* Pemda, pusat, swasta, masyarakat
-        
-        *🎯 Target 1 Tahun:*
-        • Cluster 2: Turunkan penduduk miskin 15%
-        • Cluster 1: Naikkan PDRB 10%
-        • Cluster 0: Pertahankan pertumbuhan 5%+
-        """)
 
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
