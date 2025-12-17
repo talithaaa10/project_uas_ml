@@ -148,11 +148,47 @@ def main():
         st.subheader("📊 Visualisasi Cepat")
         st.pyplot(create_cluster_comparison(cluster_data))
 
+    # ===== EDA & VISUALISASI =====
     elif menu == "📈 EDA & Visualisasi":
-        st.pyplot(create_line_plot(df_raw))
-        st.pyplot(create_box_plots(df_raw))
-        st.pyplot(create_scatter_plot(df_raw))
-        st.pyplot(create_correlation_matrix(df_raw))
+        st.title("📈 EXPLORATORY DATA ANALYSIS")
+        st.markdown("*Analisis Data dan Visualisasi Indikator Kemiskinan*")
+        
+        tab1, tab2, tab3 = st.tabs(["📈 Trend", "📊 Distribusi", "🔗 Korelasi"])
+        
+        with tab1:
+            st.subheader("Analisis Trend Tahun 2017-2019")
+            st.pyplot(create_line_plot(df_raw))
+            st.caption("Gambar 1: Trend penduduk miskin dan garis kemiskinan")
+        
+        with tab2:
+            st.subheader("Analisis Distribusi Data")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.pyplot(create_box_plots(df_raw))
+                st.caption("Gambar 2: Distribusi penduduk miskin dan pengangguran")
+            
+            with col2:
+                st.pyplot(create_scatter_plot(df_raw))
+                st.caption("Gambar 3: Hubungan PDRB vs Penduduk Miskin (2019)")
+        
+        with tab3:
+            st.subheader("Analisis Korelasi Antar Variabel")
+            st.pyplot(create_correlation_matrix(df_raw))
+            st.caption("Gambar 4: Matriks korelasi indikator kemiskinan (2019)")
+            
+            # Correlation insights
+            st.subheader("💡 Insight Korelasi")
+            st.info("""
+            *Interpretasi Korelasi:*
+            - *PDRB vs Penduduk Miskin*: Korelasi negatif (-0.xx)
+              → Semakin tinggi PDRB, cenderung semakin rendah penduduk miskin
+            - *Pengangguran vs Penduduk Miskin*: Korelasi positif (+0.xx)
+              → Semakin tinggi pengangguran, semakin tinggi penduduk miskin
+            - *Garis Kemiskinan vs PDRB*: Korelasi positif (+0.xx)
+              → Wilayah dengan PDRB tinggi cenderung memiliki garis kemiskinan tinggi
+            """)
+
 
     elif menu == "🎯 Hasil Clustering":
         st.title("🎯 ANALISIS HASIL CLUSTERING")
@@ -274,6 +310,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
