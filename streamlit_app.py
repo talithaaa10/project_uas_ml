@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
@@ -17,7 +16,7 @@ st.set_page_config(
 # ==================== FUNCTIONS ====================
 @st.cache_data
 def load_data():
-    """Load all required data"""
+    """Load dataset"""
     df = pd.read_csv('datasetkemiskinan_final.csv')
     df_raw = pd.read_csv('dataset_kemiskinan.csv')
     return df, df_raw
@@ -43,18 +42,25 @@ def apply_clustering(df, model, scaler):
     return df
 
 def build_cluster_data(df):
-    """Mengganti isi hasil_clustering.json"""
+    """Membangun data cluster dengan kategori"""
     cluster_data = {
         "skor_silhouette": 0.0,
         "skor_davies_bouldin": 0.0,
         "cluster": {}
     }
 
+    # Tentukan kategori berdasarkan karakteristik cluster
+    kategori_cluster = {
+        0: "Wilayah Ekonomi Tinggi",
+        1: "Wilayah Ekonomi Menengah", 
+        2: "Wilayah Perlu Perhatian"
+    }
+
     for i in sorted(df["Cluster"].unique()):
         cdf = df[df["Cluster"] == i]
 
         cluster_data["cluster"][str(i)] = {
-            "kategori": f"Cluster {i}",
+            "kategori": kategori_cluster[i],  # Menambahkan kategori
             "jumlah": len(cdf),
             "pdrb_rata": cdf["PDRB"].mean(),
             "miskin_rata": cdf["jumlah_penduduk_miskin"].mean(),
@@ -182,10 +188,8 @@ def main():
         
         menu = st.radio(
             "Pilih Analisis:",
-            ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", 
-             "📋 Database"]
+            ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
-        
         
         st.divider()
         st.caption("Proyek Clustering Kemiskinan")
@@ -210,7 +214,7 @@ def main():
         
         st.divider()
         
-        # Cluster Overview
+        # Cluster Overview dengan kategori
         st.subheader("🎯 HASIL CLUSTERING")
         
         cols = st.columns(3)
@@ -224,8 +228,9 @@ def main():
                 else:
                     color = "#F18F01"
                 
+                # Menampilkan kategori di header
                 st.markdown(f"<h3 style='color:{color};'>CLUSTER {i}</h3>", unsafe_allow_html=True)
-                st.markdown(f"{c['kategori']}")
+                st.markdown(f"**Kategori:** {c['kategori']}")
                 
                 st.metric("Jumlah Wilayah", c['jumlah'])
                 st.write(f"*PDRB Rata:* Rp {c['pdrb_rata']:,.0f}")
@@ -293,12 +298,13 @@ def main():
         st.subheader("📊 Perbandingan Antar Cluster")
         st.pyplot(create_cluster_comparison(cluster_data))
         
-        # Detailed Analysis per Cluster
+        # Detailed Analysis per Cluster dengan kategori
         st.subheader("🔍 Analisis Detail Tiap Cluster")
         
         for i in range(3):
             c = cluster_data['cluster'][str(i)]
             
+            # Header dengan kategori
             if i == 0:
                 st.markdown(f"<h3 style='color:#2E86AB;'>🔵 CLUSTER {i}: {c['kategori']}</h3>", 
                            unsafe_allow_html=True)
@@ -309,6 +315,7 @@ def main():
                 st.markdown(f"<h3 style='color:#F18F01;'>🟠 CLUSTER {i}: {c['kategori']}</h3>", 
                            unsafe_allow_html=True)
             
+            # Metrics
             col1, col2 = st.columns(2)
             
             with col1:
@@ -321,8 +328,23 @@ def main():
                 st.write(f"*Pengangguran:* {c['pengangguran_rata']:,.0f} jiwa")
                 st.write(f"*Persentase Data:* {(c['jumlah']/len(df)*100):.1f}%")
             
+            # Karakteristik Cluster
+            st.markdown("**📋 Karakteristik Utama:**")
+            if i == 0:
+                st.write("• PDRB tertinggi di antara semua cluster")
+                st.write("• Jumlah penduduk miskin masih tinggi meski ekonomi kuat")
+                st.write("• Dominan wilayah urban dan industri")
+            elif i == 1:
+                st.write("• PDRB menengah dengan stabilitas ekonomi")
+                st.write("• Jumlah penduduk miskin relatif rendah")
+                st.write("• Perlu penguatan untuk mencapai ekonomi tinggi")
+            else:
+                st.write("• PDRB terendah dan perlu perhatian khusus")
+                st.write("• Tingkat pengangguran dan kemiskinan tinggi")
+                st.write("• Membutuhkan intervensi kebijakan intensif")
+            
             # Wilayah dalam cluster
-            st.write("📍 Daftar Wilayah:")
+            st.write("📍 **Daftar Wilayah:**")
             cluster_regions = df[df['Cluster'] == i]['kabupaten_kota'].unique()
             
             cols_regions = st.columns(3)
@@ -338,9 +360,9 @@ def main():
             
             st.divider()
     
-    # ===== DATABASE =====
-    elif menu == "📋 Database":
-        st.title("📋 DATABASE LENGKAP")
+    # ===== DATASET =====
+    else:
+        st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
         
         # Filters
@@ -400,10 +422,7 @@ def main():
             file_name="data_clustering_kemiskinan.csv",
             mime="text/csv"
         )
-    
 
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
-
-
