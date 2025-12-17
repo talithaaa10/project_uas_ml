@@ -17,7 +17,7 @@ def load_model():
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data_kemiskinan_jabar.csv")
+    df = pd.read_csv("dataset_kemiskinan.csv")
     return df
 
 model_bundle = load_model()
@@ -110,3 +110,4 @@ elif menu == "Insight & Rekomendasi":
     - Wilayah dengan PDRB tinggi namun kemiskinan tinggi menandakan ketimpangan ekonomi.
     - Hasil clustering dapat menjadi dasar kebijakan berbasis data.
     """)
+
