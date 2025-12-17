@@ -135,18 +135,57 @@ def main():
             ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
 
-    # ===== DASHBOARD =====
-    if menu == "🏠 Dashboard":
+   if menu == "🏠 Dashboard":
         st.title("📊 DASHBOARD ANALISIS CLUSTERING")
-
+        st.markdown("*Segmentasi Wilayah Jawa Barat Berdasarkan Indikator Kemiskinan*")
+        
+        # Key Metrics
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Data", len(df))
-        col2.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
-        col3.metric("Periode Data", f"{df['Tahun'].min()}-{df['Tahun'].max()}")
-        col4.metric("Jumlah Cluster", df['Cluster'].nunique())
-
+        
+        with col1:
+            st.metric("Total Data", len(df))
+        with col2:
+            st.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
+        with col3:
+            st.metric("Periode Data", f"{df['Tahun'].min()}-{df['Tahun'].max()}")
+        with col4:
+            st.metric("Jumlah Cluster", "3")
+        
+        st.divider()
+        
+        # Cluster Overview
+        st.subheader("🎯 HASIL CLUSTERING")
+        
+        cols = st.columns(3)
+        for i, col in enumerate(cols):
+            with col:
+                c = cluster_data['cluster'][str(i)]
+                if i == 0:
+                    color = "#2E86AB"
+                elif i == 1:
+                    color = "#A23B72"
+                else:
+                    color = "#F18F01"
+                
+                st.markdown(f"<h3 style='color:{color};'>CLUSTER {i}</h3>", unsafe_allow_html=True)
+                st.markdown(f"{c['kategori']}")
+                
+                st.metric("Jumlah Wilayah", c['jumlah'])
+                st.write(f"*PDRB Rata:* Rp {c['pdrb_rata']:,.0f}")
+                st.write(f"*Penduduk Miskin:* {c['miskin_rata']:.1f} ribu")
+                
+                with st.expander("Lihat contoh wilayah"):
+                    for wilayah in c['contoh_wilayah']:
+                        st.write(f"• {wilayah}")
+        
+        # Quick Visual
+        st.divider()
         st.subheader("📊 Visualisasi Cepat")
-        st.pyplot(create_cluster_comparison(cluster_data))
+        
+        fig = create_cluster_comparison(cluster_data)
+        st.pyplot(fig)
+        st.caption("Perbandingan PDRB dan Penduduk Miskin antar Cluster")
+
 
     # ===== EDA & VISUALISASI =====
     elif menu == "📈 EDA & Visualisasi":
@@ -310,6 +349,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
