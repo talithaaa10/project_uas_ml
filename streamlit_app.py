@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
+import matplotlib.pyplot as plt
+import seaborn as sns
 import joblib
 import os
 
@@ -9,57 +10,31 @@ import os
 st.set_page_config(
     page_title="Analisis Kemiskinan Jawa Barat",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# ==================== NAMA CLUSTER ====================
+# ==================== CLUSTER LABEL ====================
 CLUSTER_NAMES = {
-    "0": "Cluster 0 (Kemiskinan Rendah / Relatif Sejahtera)",
+    "0": "Cluster 0 (Kemiskinan Rendah)",
     "1": "Cluster 1 (Kemiskinan Sedang)",
-    "2": "Cluster 2 (Kemiskinan Tinggi / Perlu Perhatian)",
-    "3": "Cluster 3"
+    "2": "Cluster 2 (Kemiskinan Tinggi)"
 }
-
-# ==================== CSS ====================
-def local_css():
-    st.markdown("""
-    <style>
-        div[data-testid="stMetric"] {
-            background-color: #F0F2F6;
-            border: 1px solid #D6D6D6;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        .main-title {
-            font-size: 2.4em;
-            color: #2E86C1;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .cluster-card {
-            background-color: #e8f4f8;
-            padding: 18px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            border-left: 5px solid #2E86C1;
-        }
-    </style>
-    """, unsafe_allow_html=True)
 
 # ==================== LOAD DATA ====================
 @st.cache_data
 def load_data():
-    if not os.path.exists("datasetkemiskinan_final.csv") or not os.path.exists("dataset_kemiskinan.csv"):
-        st.error("File dataset tidak ditemukan. Pastikan CSV ada di root project.")
+    if not os.path.exists("datasetkemiskinan_final.csv"):
+        st.error("datasetkemiskinan_final.csv tidak ditemukan")
+        st.stop()
+
+    if not os.path.exists("dataset_kemiskinan.csv"):
+        st.error("dataset_kemiskinan.csv tidak ditemukan")
         st.stop()
 
     df = pd.read_csv("datasetkemiskinan_final.csv")
     df_raw = pd.read_csv("dataset_kemiskinan.csv")
 
-    if "Tahun" in df.columns:
-        df["Tahun"] = df["Tahun"].astype(int)
+    df["Tahun"] = df["Tahun"].astype(int)
 
     return df, df_raw
 
@@ -67,18 +42,14 @@ def load_data():
 @st.cache_resource
 def load_model():
     if not os.path.exists("kmeans.pkl"):
-        st.error("File model kmeans.pkl tidak ditemukan.")
+        st.error("File kmeans.pkl tidak ditemukan")
         st.stop()
 
     bundle = joblib.load("kmeans.pkl")
 
-    if "model" not in bundle or "scaler" not in bundle:
-        st.error("Isi kmeans.pkl tidak valid. Harus berisi 'model' dan 'scaler'.")
-        st.stop()
-
     return bundle["model"], bundle["scaler"]
 
-# ==================== CLUSTERING ====================
+# ==================== APPLY CLUSTER ====================
 def apply_clustering(df, model, scaler):
     fitur = [
         "jumlah_warga_jabar",
@@ -88,151 +59,110 @@ def apply_clustering(df, model, scaler):
         "PDRB"
     ]
 
-    missing = [f for f in fitur if f not in df.columns]
-    if missing:
-        st.error(f"Kolom berikut tidak ditemukan di dataset: {missing}")
-        st.stop()
-
     X = df[fitur]
     X_scaled = scaler.transform(X)
+
     df["Cluster"] = model.predict(X_scaled).astype(str)
-    df["Cluster Label"] = df["Cluster"].map(CLUSTER_NAMES).fillna(df["Cluster"])
+    df["Cluster Label"] = df["Cluster"].map(CLUSTER_NAMES)
 
     return df
 
 # ==================== VISUAL ====================
-def plot_cluster_scatter(df):
-    fig = px.scatter(
-        df,
+def scatter_plot(df):
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.scatterplot(
+        data=df,
         x="PDRB",
         y="jumlah_penduduk_miskin",
-        color="Cluster Label",
+        hue="Cluster Label",
         size="jumlah_pengangguran",
-        hover_name="kabupaten_kota",
-        title="Peta Sebaran PDRB vs Penduduk Miskin",
-        template="plotly_white",
-        height=520
+        ax=ax
     )
+    ax.set_title("PDRB vs Penduduk Miskin")
+    ax.grid(True, alpha=0.3)
     return fig
 
 # ==================== MAIN ====================
 def main():
-    local_css()
     df, df_raw = load_data()
     model, scaler = load_model()
     df = apply_clustering(df, model, scaler)
 
     # ===== SIDEBAR =====
     with st.sidebar:
-        st.title("📊 Jabar Analytics")
-        st.info("Aplikasi Clustering K-Means Kemiskinan Jawa Barat")
-        menu = st.radio("Navigasi", ["🏠 Dashboard", "📈 EDA", "🎯 Hasil Clustering", "📂 Dataset"])
-
-        st.divider()
-        st.markdown("**Keterangan Cluster:**")
-        for k, v in CLUSTER_NAMES.items():
-            if k in df["Cluster"].unique():
-                st.caption(f"**{k}** : {v}")
+        st.title("📊 Menu")
+        menu = st.radio(
+            "Pilih Menu",
+            ["🏠 Dashboard", "📈 EDA", "🎯 Clustering", "📋 Dataset"]
+        )
 
     # ===== DASHBOARD =====
     if menu == "🏠 Dashboard":
-        st.markdown('<div class="main-title">Dashboard Kemiskinan Jawa Barat</div>', unsafe_allow_html=True)
+        st.title("Dashboard Analisis Kemiskinan Jawa Barat")
 
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Jumlah Wilayah", df["kabupaten_kota"].nunique())
-        c2.metric("Rata-rata PDRB", f"Rp {df['PDRB'].mean():,.0f}")
-        c3.metric("Total Penduduk Miskin", f"{df['jumlah_penduduk_miskin'].sum():,.0f}")
-        c4.metric("Jumlah Cluster", df["Cluster"].nunique())
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Jumlah Wilayah", df["kabupaten_kota"].nunique())
+        col2.metric("Rata-rata PDRB", f"Rp {df['PDRB'].mean():,.0f}")
+        col3.metric("Total Penduduk Miskin", f"{df['jumlah_penduduk_miskin'].sum():,.0f}")
+        col4.metric("Jumlah Cluster", df["Cluster"].nunique())
 
         st.divider()
 
-        cluster_count = df["Cluster Label"].value_counts().reset_index()
-        cluster_count.columns = ["Cluster", "Jumlah"]
+        cluster_count = df["Cluster Label"].value_counts()
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.plotly_chart(
-                px.bar(cluster_count, x="Jumlah", y="Cluster", orientation="h",
-                       title="Jumlah Wilayah per Cluster"),
-                use_container_width=True
-            )
-        with col2:
-            st.plotly_chart(
-                px.pie(cluster_count, values="Jumlah", names="Cluster", hole=0.4,
-                       title="Proporsi Cluster"),
-                use_container_width=True
-            )
+        fig, ax = plt.subplots()
+        cluster_count.plot(kind="bar", ax=ax)
+        ax.set_title("Jumlah Wilayah per Cluster")
+        st.pyplot(fig)
 
     # ===== EDA =====
     elif menu == "📈 EDA":
-        st.markdown("<h2>Exploratory Data Analysis</h2>", unsafe_allow_html=True)
+        st.title("Exploratory Data Analysis")
 
-        yearly = df_raw.groupby("Tahun").sum(numeric_only=True).reset_index()
-        fig = px.line(yearly, x="Tahun", y="jumlah_penduduk_miskin",
-                      title="Tren Total Penduduk Miskin")
-        st.plotly_chart(fig, use_container_width=True)
+        yearly = df_raw.groupby("Tahun")["jumlah_penduduk_miskin"].sum()
 
-    # ===== CLUSTER DETAIL =====
-    elif menu == "🎯 Hasil Clustering":
-        st.markdown("<h2>Analisis Hasil Clustering</h2>", unsafe_allow_html=True)
+        fig, ax = plt.subplots()
+        ax.plot(yearly.index, yearly.values, marker="o")
+        ax.set_title("Tren Penduduk Miskin")
+        ax.set_xlabel("Tahun")
+        ax.set_ylabel("Jumlah Penduduk Miskin")
+        ax.grid(True)
 
-        tab1, tab2 = st.tabs(["Visualisasi", "Detail Cluster"])
+        st.pyplot(fig)
 
-        with tab1:
-            st.plotly_chart(plot_cluster_scatter(df), use_container_width=True)
+    # ===== CLUSTERING =====
+    elif menu == "🎯 Clustering":
+        st.title("Hasil Clustering")
 
-        with tab2:
-            for c in sorted(df["Cluster"].unique()):
-                c_data = df[df["Cluster"] == c]
-                c_name = CLUSTER_NAMES.get(c, f"Cluster {c}")
+        st.pyplot(scatter_plot(df))
 
-                st.markdown(f"""
-                <div class="cluster-card">
-                    <h3>{c_name}</h3>
-                </div>
-                """, unsafe_allow_html=True)
+        for c in sorted(df["Cluster"].unique()):
+            c_data = df[df["Cluster"] == c]
+            st.subheader(CLUSTER_NAMES[c])
 
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Rata-rata PDRB", f"Rp {c_data['PDRB'].mean():,.0f}")
-                col2.metric("Rata-rata Penduduk Miskin", f"{c_data['jumlah_penduduk_miskin'].mean():.1f}")
-                col3.metric("Rata-rata Pengangguran", f"{c_data['jumlah_pengangguran'].mean():,.0f}")
-
-                with st.expander("Lihat contoh wilayah"):
-                    st.table(c_data[["kabupaten_kota", "Tahun", "jumlah_penduduk_miskin"]].head(10))
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Rata-rata PDRB", f"Rp {c_data['PDRB'].mean():,.0f}")
+            col2.metric("Penduduk Miskin", f"{c_data['jumlah_penduduk_miskin'].mean():.1f}")
+            col3.metric("Pengangguran", f"{c_data['jumlah_pengangguran'].mean():,.0f}")
 
     # ===== DATASET =====
     else:
-        st.markdown("<h2>Dataset & Filter</h2>", unsafe_allow_html=True)
+        st.title("Dataset")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            selected_cluster = st.multiselect(
-                "Pilih Cluster",
-                sorted(df["Cluster"].unique()),
-                default=sorted(df["Cluster"].unique())
-            )
+        cluster_filter = st.multiselect(
+            "Pilih Cluster",
+            sorted(df["Cluster"].unique()),
+            default=sorted(df["Cluster"].unique())
+        )
 
-        with col2:
-            if "Tahun" in df.columns:
-                selected_year = st.multiselect(
-                    "Pilih Tahun",
-                    sorted(df["Tahun"].unique()),
-                    default=sorted(df["Tahun"].unique())
-                )
-                filtered = df[
-                    (df["Cluster"].isin(selected_cluster)) &
-                    (df["Tahun"].isin(selected_year))
-                ]
-            else:
-                filtered = df[df["Cluster"].isin(selected_cluster)]
-
+        filtered = df[df["Cluster"].isin(cluster_filter)]
         st.dataframe(filtered, use_container_width=True)
 
         csv = filtered.to_csv(index=False).encode("utf-8")
         st.download_button(
-            "📥 Download CSV",
+            "Download CSV",
             csv,
-            "hasil_clustering_kemiskinan.csv",
+            "hasil_clustering.csv",
             "text/csv"
         )
 
