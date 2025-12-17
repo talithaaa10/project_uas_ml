@@ -135,7 +135,7 @@ def main():
             ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
 
-   if menu == "🏠 Dashboard":
+            if menu == "🏠 Dashboard":
         st.title("📊 DASHBOARD ANALISIS CLUSTERING")
         st.markdown("*Segmentasi Wilayah Jawa Barat Berdasarkan Indikator Kemiskinan*")
         
@@ -349,6 +349,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
