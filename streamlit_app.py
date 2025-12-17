@@ -209,7 +209,7 @@ def main():
             st.divider()
 
   # ===== DATABASE =====
-    else menu == "📋 Database":
+    else menu == "📋 Database"
         st.title("📋 DATABASE LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
         
@@ -275,5 +275,6 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
