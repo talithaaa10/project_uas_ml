@@ -134,11 +134,12 @@ def main():
             "Pilih Analisis:",
             ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
-        
-        if menu == "🏠 Dashboard":
+
+    # ===== DASHBOARD =====
+    if menu == "🏠 Dashboard":
         st.title("📊 DASHBOARD ANALISIS CLUSTERING")
         st.markdown("*Segmentasi Wilayah Jawa Barat Berdasarkan Indikator Kemiskinan*")
-        
+
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Total Data", len(df))
         col2.metric("Jumlah Wilayah", df['kabupaten_kota'].nunique())
@@ -148,173 +149,77 @@ def main():
         st.divider()
         st.subheader("📊 Visualisasi Cepat")
         st.pyplot(create_cluster_comparison(cluster_data))
+
     # ===== EDA & VISUALISASI =====
     elif menu == "📈 EDA & Visualisasi":
         st.title("📈 EXPLORATORY DATA ANALYSIS")
         st.markdown("*Analisis Data dan Visualisasi Indikator Kemiskinan*")
-        
+
         tab1, tab2, tab3 = st.tabs(["📈 Trend", "📊 Distribusi", "🔗 Korelasi"])
-        
+
         with tab1:
             st.subheader("Analisis Trend Tahun 2017-2019")
             st.pyplot(create_line_plot(df_raw))
             st.caption("Gambar 1: Trend penduduk miskin dan garis kemiskinan")
-        
+
         with tab2:
             st.subheader("Analisis Distribusi Data")
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 st.pyplot(create_box_plots(df_raw))
                 st.caption("Gambar 2: Distribusi penduduk miskin dan pengangguran")
-            
+
             with col2:
                 st.pyplot(create_scatter_plot(df_raw))
                 st.caption("Gambar 3: Hubungan PDRB vs Penduduk Miskin (2019)")
-        
+
         with tab3:
             st.subheader("Analisis Korelasi Antar Variabel")
             st.pyplot(create_correlation_matrix(df_raw))
             st.caption("Gambar 4: Matriks korelasi indikator kemiskinan (2019)")
-            
-            # Correlation insights
-            st.subheader("💡 Insight Korelasi")
-            st.info("""
-            *Interpretasi Korelasi:*
-            - *PDRB vs Penduduk Miskin*: Korelasi negatif (-0.xx)
-              → Semakin tinggi PDRB, cenderung semakin rendah penduduk miskin
-            - *Pengangguran vs Penduduk Miskin*: Korelasi positif (+0.xx)
-              → Semakin tinggi pengangguran, semakin tinggi penduduk miskin
-            - *Garis Kemiskinan vs PDRB*: Korelasi positif (+0.xx)
-              → Wilayah dengan PDRB tinggi cenderung memiliki garis kemiskinan tinggi
-            """)
 
-
+    # ===== HASIL CLUSTERING =====
     elif menu == "🎯 Hasil Clustering":
         st.title("🎯 ANALISIS HASIL CLUSTERING")
         st.markdown("*Analisis Mendalam Tiap Cluster*")
-        
-        # Cluster Comparison
+
         st.subheader("📊 Perbandingan Antar Cluster")
         st.pyplot(create_cluster_comparison(cluster_data))
-        
-        # Detailed Analysis per Cluster
+
         st.subheader("🔍 Analisis Detail Tiap Cluster")
-        
+
         for i in range(3):
             c = cluster_data['cluster'][str(i)]
-            
+
             if i == 0:
-                st.markdown(f"<h3 style='color:#2E86AB;'>🔵 CLUSTER {i}: {c['kategori']}</h3>", 
-                           unsafe_allow_html=True)
+                st.markdown(f"<h3 style='color:#2E86AB;'>🔵 CLUSTER {i}</h3>", unsafe_allow_html=True)
             elif i == 1:
-                st.markdown(f"<h3 style='color:#A23B72;'>🟣 CLUSTER {i}: {c['kategori']}</h3>", 
-                           unsafe_allow_html=True)
+                st.markdown(f"<h3 style='color:#A23B72;'>🟣 CLUSTER {i}</h3>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<h3 style='color:#F18F01;'>🟠 CLUSTER {i}: {c['kategori']}</h3>", 
-                           unsafe_allow_html=True)
-            
+                st.markdown(f"<h3 style='color:#F18F01;'>🟠 CLUSTER {i}</h3>", unsafe_allow_html=True)
+
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 st.metric("Jumlah Wilayah", c['jumlah'])
                 st.write(f"*PDRB Rata-rata:* Rp {c['pdrb_rata']:,.0f}")
                 st.write(f"*Garis Kemiskinan:* Rp {c['garis_kemiskinan_rata']:,.0f}")
-            
+
             with col2:
                 st.metric("Penduduk Miskin", f"{c['miskin_rata']:.1f} ribu")
                 st.write(f"*Pengangguran:* {c['pengangguran_rata']:,.0f} jiwa")
-                st.write(f"*Persentase Data:* {(c['jumlah']/len(df)*100):.1f}%")
-            
-            # Wilayah dalam cluster
-            st.write("📍 Daftar Wilayah:")
-            cluster_regions = df[df['Cluster'] == i]['kabupaten_kota'].unique()
-            
-            cols_regions = st.columns(3)
-            regions_per_col = len(cluster_regions) // 3 + 1
-            
-            for col_idx, col in enumerate(cols_regions):
-                with col:
-                    start_idx = col_idx * regions_per_col
-                    end_idx = min((col_idx + 1) * regions_per_col, len(cluster_regions))
-                    
-                    for region in cluster_regions[start_idx:end_idx]:
-                        st.write(f"• {region}")
-            
+
             st.divider()
 
-  # ===== DATABASE =====
+    # ===== DATASET =====
     else:
         st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
-        
-        # Filters
-        st.subheader("🔍 Filter Data")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            tahun_filter = st.multiselect("Pilih Tahun", 
-                                         options=sorted(df['Tahun'].unique()), 
-                                         default=sorted(df['Tahun'].unique()))
-        with col2:
-            cluster_filter = st.multiselect("Pilih Cluster", 
-                                           options=sorted(df['Cluster'].unique()), 
-                                           default=sorted(df['Cluster'].unique()))
-        
-        # Apply filters
-        filtered_df = df.copy()
-        if tahun_filter:
-            filtered_df = filtered_df[filtered_df['Tahun'].isin(tahun_filter)]
-        if cluster_filter:
-            filtered_df = filtered_df[filtered_df['Cluster'].isin(cluster_filter)]
-        
-        # Statistics
-        st.subheader("📊 Statistik Data")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Records", len(filtered_df))
-        with col2:
-            avg_pdrb = filtered_df['PDRB'].mean()
-            st.metric("PDRB Rata", f"Rp {avg_pdrb:,.0f}")
-        with col3:
-            avg_miskin = filtered_df['jumlah_penduduk_miskin'].mean()
-            st.metric("Penduduk Miskin Rata", f"{avg_miskin:.1f} ribu")
-        
-        # Data Table
-        st.subheader("📋 Tabel Data")
-        st.dataframe(
-            filtered_df,
-            use_container_width=True,
-            column_config={
-                "Tahun": st.column_config.NumberColumn(format="%d"),
-                "PDRB": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "garis_kemiskinan": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "Cluster": st.column_config.NumberColumn(format="%d")
-            },
-            hide_index=True
-        )
-        
-        # Download
-        st.subheader("💾 Download Data")
-        
-        csv = filtered_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Download Data Terfilter (CSV)",
-            data=csv,
-            file_name="data_clustering_kemiskinan.csv",
-            mime="text/csv"
-        )
-    
+
+        st.dataframe(df, use_container_width=True)
+
 
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
