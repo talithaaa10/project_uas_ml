@@ -132,8 +132,7 @@ def main():
         st.title("📊 Menu Analisis")
         menu = st.radio(
             "Pilih Analisis:",
-            ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering",
-             "📋 Dataset"]
+            ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
 
     # ===== DASHBOARD =====
@@ -209,8 +208,8 @@ def main():
             st.divider()
 
   # ===== DATABASE =====
-    else menu == "📋 Database"
-        st.title("📋 DATABASE LENGKAP")
+    else:
+        st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
         
         # Filters
@@ -275,6 +274,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
