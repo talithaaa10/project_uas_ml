@@ -156,10 +156,57 @@ def main():
         st.pyplot(create_correlation_matrix(df_raw))
 
     elif menu == "🎯 Hasil Clustering":
-        for i in cluster_data["cluster"]:
-            c = cluster_data["cluster"][i]
-            st.subheader(f"Cluster {i}")
-            st.write(c)
+        st.title("🎯 ANALISIS HASIL CLUSTERING")
+        st.markdown("*Analisis Mendalam Tiap Cluster*")
+        
+        # Cluster Comparison
+        st.subheader("📊 Perbandingan Antar Cluster")
+        st.pyplot(create_cluster_comparison(cluster_data))
+        
+        # Detailed Analysis per Cluster
+        st.subheader("🔍 Analisis Detail Tiap Cluster")
+        
+        for i in range(3):
+            c = cluster_data['cluster'][str(i)]
+            
+            if i == 0:
+                st.markdown(f"<h3 style='color:#2E86AB;'>🔵 CLUSTER {i}: {c['kategori']}</h3>", 
+                           unsafe_allow_html=True)
+            elif i == 1:
+                st.markdown(f"<h3 style='color:#A23B72;'>🟣 CLUSTER {i}: {c['kategori']}</h3>", 
+                           unsafe_allow_html=True)
+            else:
+                st.markdown(f"<h3 style='color:#F18F01;'>🟠 CLUSTER {i}: {c['kategori']}</h3>", 
+                           unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Jumlah Wilayah", c['jumlah'])
+                st.write(f"*PDRB Rata-rata:* Rp {c['pdrb_rata']:,.0f}")
+                st.write(f"*Garis Kemiskinan:* Rp {c['garis_kemiskinan_rata']:,.0f}")
+            
+            with col2:
+                st.metric("Penduduk Miskin", f"{c['miskin_rata']:.1f} ribu")
+                st.write(f"*Pengangguran:* {c['pengangguran_rata']:,.0f} jiwa")
+                st.write(f"*Persentase Data:* {(c['jumlah']/len(df)*100):.1f}%")
+            
+            # Wilayah dalam cluster
+            st.write("📍 Daftar Wilayah:")
+            cluster_regions = df[df['Cluster'] == i]['kabupaten_kota'].unique()
+            
+            cols_regions = st.columns(3)
+            regions_per_col = len(cluster_regions) // 3 + 1
+            
+            for col_idx, col in enumerate(cols_regions):
+                with col:
+                    start_idx = col_idx * regions_per_col
+                    end_idx = min((col_idx + 1) * regions_per_col, len(cluster_regions))
+                    
+                    for region in cluster_regions[start_idx:end_idx]:
+                        st.write(f"• {region}")
+            
+            st.divider()
 
     elif menu == "📋 Dataset":
         st.dataframe(df, use_container_width=True)
@@ -170,3 +217,4 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
