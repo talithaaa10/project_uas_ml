@@ -20,12 +20,11 @@ def load_data():
     # ==============================
     # LOAD MODEL
     # ==============================
-    model_bundle = joblib.load("model.pkl")
+    model_bundle = joblib.load("kmeans.pkl")
     model = model_bundle["model"]
     scaler = model_bundle["scaler"]
 
     silhouette = model_bundle["silhouette"]
-    davies = model_bundle["davies_bouldin"]
 
     # ==============================
     # LOAD DATASET
@@ -52,7 +51,6 @@ def load_data():
     # ==============================
     cluster_data = {
         "skor_silhouette": silhouette,
-        "skor_davies_bouldin": davies,
         "cluster": {}
     }
 
@@ -219,3 +217,4 @@ def main():
 # ==================== RUN ====================
 if __name__ == "__main__":
     main()
+
