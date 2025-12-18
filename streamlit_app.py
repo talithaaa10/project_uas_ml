@@ -347,14 +347,6 @@ def main():
                 with st.expander("Lihat contoh wilayah"):
                     for wilayah in c['contoh_wilayah']:
                         st.write(f"• {wilayah}")
-        
-        # Quick Visual
-        st.divider()
-        st.subheader("📊 Visualisasi Cepat")
-        
-        fig = create_cluster_comparison(cluster_data)
-        st.pyplot(fig)
-        st.caption("Perbandingan PDRB dan Penduduk Miskin antar Cluster")
     
     # ===== EDA & VISUALISASI =====
     elif menu == "📈 EDA & Visualisasi":
@@ -410,28 +402,6 @@ def main():
                     st.metric("Cluster Terbesar", 
                              f"Cluster {max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])[0]}")
             
-            # Tambah insight dan interpretasi
-            st.subheader("💡 Interpretasi Visualisasi")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("""
-                **Indikator Kualitas Clustering:**
-                1. **Separasi antar Cluster**: Centroid yang berjauhan menunjukkan cluster yang berbeda
-                2. **Kepadatan Cluster**: Titik yang berkumpul rapat menunjukkan homogenitas
-                3. **Outlier**: Wilayah yang jauh dari centroid perlu analisis khusus
-                4. **Overlap**: Area tumpang tindih menunjukkan kesamaan karakteristik
-                """)
-            
-            with col2:
-                st.markdown("""
-                **Rekomendasi Kebijakan:**
-                1. **Cluster 0 (Ekonomi Tinggi)**: Fokus pada pemerataan
-                2. **Cluster 1 (Ekonomi Menengah)**: Penguatan infrastruktur
-                3. **Cluster 2 (Perlu Perhatian)**: Intervensi komprehensif
-                """)
-            
             # Visualisasi tambahan
             st.subheader("📊 Perbandingan Numerik Cluster")
             st.pyplot(create_cluster_comparison(cluster_data))
@@ -483,22 +453,6 @@ def main():
                     st.metric("Penduduk Miskin", f"{c['miskin_rata']:.1f} ribu")
                     st.write(f"*Pengangguran:* {c['pengangguran_rata']:,.0f} jiwa")
                     st.write(f"*Persentase Data:* {(c['jumlah']/len(df)*100):.1f}%")
-                
-                # Karakteristik Cluster
-                st.markdown("**📋 Karakteristik Utama:**")
-                if i == 0:
-                    st.write("• PDRB tertinggi di antara semua cluster")
-                    st.write("• Jumlah penduduk miskin masih tinggi meski ekonomi kuat")
-                    st.write("• Dominan wilayah urban dan industri")
-                elif i == 1:
-                    st.write("• PDRB menengah dengan stabilitas ekonomi")
-                    st.write("• Jumlah penduduk miskin relatif rendah")
-                    st.write("• Perlu penguatan untuk mencapai ekonomi tinggi")
-                else:
-                    st.write("• PDRB terendah dan perlu perhatian khusus")
-                    st.write("• Tingkat pengangguran dan kemiskinan tinggi")
-                    st.write("• Membutuhkan intervensi kebijakan intensif")
-                
                 # Wilayah dalam cluster
                 st.write("📍 **Daftar Wilayah:**")
                 cluster_regions = df[df['cluster_kmeans'] == i]['kabupaten_kota'].unique()
@@ -610,6 +564,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
