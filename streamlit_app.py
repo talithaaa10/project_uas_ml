@@ -361,27 +361,14 @@ def main():
         st.title("📈 EXPLORATORY DATA ANALYSIS")
         st.markdown("*Analisis Data dan Visualisasi Indikator Kemiskinan*")
         
-        tab1, tab2, tab3 = st.tabs(["📈 Trend", "📊 Distribusi", "🎯 Scatter K-Means"])
+        tab1, tab2 = st.tabs(["📈 Trend", "🎯 Scatter K-Means"])
         
         with tab1:
             st.subheader("Analisis Trend Tahun 2017-2019")
             st.pyplot(create_line_plot(df_raw))
             st.caption("Gambar 1: Trend penduduk miskin dan garis kemiskinan")
-        
+            
         with tab2:
-            st.subheader("Analisis Distribusi Data")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.pyplot(create_box_plots(df_raw))
-                st.caption("Gambar 2: Distribusi penduduk miskin dan pengangguran")
-            
-            with col2:
-                st.pyplot(create_scatter_plot(df_raw))
-                st.caption("Gambar 3: Hubungan PDRB vs Penduduk Miskin (2019)")
-            
-        
-        with tab4:
             st.subheader("🎯 Visualisasi Hasil Clustering K-Means")
             
             # Pilih jenis visualisasi
@@ -623,5 +610,6 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
