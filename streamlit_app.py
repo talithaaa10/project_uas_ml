@@ -385,28 +385,9 @@ def main():
             st.pyplot(create_correlation_matrix(df_raw))
             st.caption("Gambar 4: Matriks korelasi indikator kemiskinan (2019)")
             
-            # Correlation insights
-            st.subheader("💡 Insight Korelasi")
-            st.info("""
-            *Interpretasi Korelasi:*
-            - *PDRB vs Penduduk Miskin*: Korelasi negatif (-0.xx)
-              → Semakin tinggi PDRB, cenderung semakin rendah penduduk miskin
-            - *Pengangguran vs Penduduk Miskin*: Korelasi positif (+0.xx)
-              → Semakin tinggi pengangguran, semakin tinggi penduduk miskin
-            - *Garis Kemiskinan vs PDRB*: Korelasi positif (+0.xx)
-              → Wilayah dengan PDRB tinggi cenderung memiliki garis kemiskinan tinggi
-            """)
         
         with tab4:
             st.subheader("🎯 Visualisasi Hasil Clustering K-Means")
-            
-            st.info("""
-            **Penjelasan Visualisasi:**
-            - Setiap titik mewakili satu wilayah kabupaten/kota
-            - Warna menunjukkan cluster hasil K-Means
-            - Tanda 'X' menunjukkan centroid (pusat) tiap cluster
-            - Skala dinormalisasi untuk visualisasi yang lebih baik
-            """)
             
             # Pilih jenis visualisasi
             viz_type = st.radio(
@@ -419,38 +400,7 @@ def main():
                 st.pyplot(fig)
                 st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
                 
-                # Insight dari visualisasi
-                with st.expander("📊 Insight dari Visualisasi"):
-                    st.write("""
-                    **Interpretasi Visual:**
-                    1. **Cluster Separation**: Jarak antar centroid menunjukkan seberapa berbeda karakteristik tiap cluster
-                    2. **Cluster Density**: Kepadatan titik dalam cluster menunjukkan homogenitas wilayah
-                    3. **Outliers**: Titik yang jauh dari centroid mungkin memiliki karakteristik unik
-                    4. **Pattern**: Pola sebaran menunjukkan hubungan antara PDRB dan kemiskinan
-                    """)
             
-            else:  # Plot berdasarkan Fitur Tertentu
-                col1, col2 = st.columns(2)
-                with col1:
-                    feature_x = st.selectbox(
-                        "Pilih fitur untuk sumbu X:",
-                        ['jumlah_penduduk_miskin', 'garis_kemiskinan', 'jumlah_pengangguran', 'PDRB'],
-                        index=3
-                    )
-                with col2:
-                    feature_y = st.selectbox(
-                        "Pilih fitur untuk sumbu Y:",
-                        ['jumlah_penduduk_miskin', 'garis_kemiskinan', 'jumlah_pengangguran', 'PDRB'],
-                        index=0
-                    )
-                
-                if feature_x != feature_y:
-                    fig = create_feature_scatter_plot(df, feature_x, feature_y, cluster_data)
-                    st.pyplot(fig)
-                    st.caption(f"Clustering berdasarkan {feature_x} vs {feature_y}")
-                else:
-                    st.warning("Silakan pilih fitur yang berbeda untuk sumbu X dan Y")
-    
     # ===== HASIL CLUSTERING =====
     elif menu == "🎯 Hasil Clustering":
         st.title("🎯 ANALISIS HASIL CLUSTERING")
@@ -678,3 +628,4 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
