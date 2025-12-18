@@ -637,10 +637,15 @@ def main():
                 
                 st.divider()
     
-    # ===== DATASET =====
+# ===== DATASET =====
     else:
         st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
+        
+        # Buat dataframe untuk tampilan tanpa kolom PCA dan PDRB_normalized
+        df_display = df.drop(columns=['PCA1', 'PCA2', 'PDRB_normalized'], errors='ignore').copy()
+        # Ganti nama kolom Cluster menjadi Cluster_KMeans untuk lebih jelas
+        df_display = df_display.rename(columns={'Cluster': 'Cluster_KMeans'})
         
         # Filters
         st.subheader("🔍 Filter Data")
@@ -648,19 +653,19 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             tahun_filter = st.multiselect("Pilih Tahun", 
-                                         options=sorted(df['Tahun'].unique()), 
-                                         default=sorted(df['Tahun'].unique()))
+                                         options=sorted(df_display['Tahun'].unique()), 
+                                         default=sorted(df_display['Tahun'].unique()))
         with col2:
             cluster_filter = st.multiselect("Pilih Cluster", 
-                                           options=sorted(df['Cluster'].unique()), 
-                                           default=sorted(df['Cluster'].unique()))
+                                           options=sorted(df_display['Cluster_KMeans'].unique()), 
+                                           default=sorted(df_display['Cluster_KMeans'].unique()))
         
         # Apply filters
-        filtered_df = df.copy()
+        filtered_df = df_display.copy()
         if tahun_filter:
             filtered_df = filtered_df[filtered_df['Tahun'].isin(tahun_filter)]
         if cluster_filter:
-            filtered_df = filtered_df[filtered_df['Cluster'].isin(cluster_filter)]
+            filtered_df = filtered_df[filtered_df['Cluster_KMeans'].isin(cluster_filter)]
         
         # Statistics
         st.subheader("📊 Statistik Data")
@@ -670,36 +675,159 @@ def main():
             st.metric("Records", len(filtered_df))
         with col2:
             avg_pdrb = filtered_df['PDRB'].mean()
-            st.metric("PDRB Rata", f"Rp {avg_pdrb:,.0f}")
+            st.metric("PDRB Rata-rata", f"Rp {avg_pdrb:,.0f}")
         with col3:
             avg_miskin = filtered_df['jumlah_penduduk_miskin'].mean()
-            st.metric("Penduduk Miskin Rata", f"{avg_miskin:.1f} ribu")
+            st.metric("Penduduk Miskin Rata-rata", f"{avg_miskin:.1f} ribu")
+        
+        # Tambah statistik tambahan
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            total_miskin = filtered_df['jumlah_penduduk_miskin'].sum()
+            st.metric("Total Penduduk Miskin", f"{total_miskin:,.0f} jiwa")
+        with col2:
+            avg_pengangguran = filtered_df['jumlah_pengangguran'].mean()
+            st.metric("Pengangguran Rata-rata", f"{avg_pengangguran:,.0f} jiwa")
+        with col3:
+            distribusi_cluster = filtered_df['Cluster_KMeans'].value_counts()
+            cluster_terbanyak = distribusi_cluster.idxmax()
+            st.metric("Cluster Dominan", f"Cluster {cluster_terbanyak}")
+        
+        # Tampilkan distribusi cluster
+        st.subheader("📊 Distribusi Cluster K-Means")
+        cluster_counts = filtered_df['Cluster_KMeans'].value_counts().sort_index()
+        
+        col1, col2, col3 = st.columns(3)
+        for i, (cluster_num, count) in enumerate(cluster_counts.items()):
+            with [col1, col2, col3][i]:
+                persentase = (count / len(filtered_df)) * 100
+                st.metric(f"Cluster {cluster_num}", 
+                         f"{count} wilayah", 
+                         f"{persentase:.1f}%")
         
         # Data Table
-        st.subheader("📋 Tabel Data")
+        st.subheader("📋 Tabel Data Lengkap")
+        
+        # Konfigurasi kolom untuk formatting yang lebih baik
+        column_config = {
+            "Tahun": st.column_config.NumberColumn(
+                format="%d",
+                help="Tahun data"
+            ),
+            "kabupaten_kota": st.column_config.TextColumn(
+                "Kabupaten/Kota",
+                help="Nama wilayah"
+            ),
+            "jumlah_warga_jabar": st.column_config.NumberColumn(
+                "Jumlah Penduduk",
+                format="%,d",
+                help="Total penduduk wilayah"
+            ),
+            "jumlah_penduduk_miskin": st.column_config.NumberColumn(
+                "Penduduk Miskin",
+                format="%,d",
+                help="Jumlah penduduk miskin"
+            ),
+            "garis_kemiskinan": st.column_config.NumberColumn(
+                "Garis Kemiskinan",
+                format="Rp %,.0f",
+                help="Rata-rata pengeluaran per kapita per bulan"
+            ),
+            "jumlah_pengangguran": st.column_config.NumberColumn(
+                "Pengangguran",
+                format="%,d",
+                help="Jumlah pengangguran"
+            ),
+            "PDRB": st.column_config.NumberColumn(
+                "PDRB",
+                format="Rp %,.0f",
+                help="Produk Domestic Regional Bruto"
+            ),
+            "Cluster_KMeans": st.column_config.NumberColumn(
+                "Cluster K-Means",
+                format="%d",
+                help="Hasil clustering K-Means"
+            )
+        }
+        
+        # Tampilkan dataframe dengan formatting
         st.dataframe(
             filtered_df,
             use_container_width=True,
-            column_config={
-                "Tahun": st.column_config.NumberColumn(format="%d"),
-                "PDRB": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "garis_kemiskinan": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "Cluster": st.column_config.NumberColumn(format="%d")
-            },
+            column_config=column_config,
             hide_index=True
         )
         
-        # Download
+        # Informasi tambahan tentang cluster
+        with st.expander("ℹ️ Informasi Kategori Cluster"):
+            kategori_cluster = {
+                0: "Wilayah Ekonomi Tinggi",
+                1: "Wilayah Ekonomi Menengah", 
+                2: "Wilayah Perlu Perhatian"
+            }
+            
+            for cluster_num, kategori in kategori_cluster.items():
+                st.write(f"**Cluster {cluster_num}**: {kategori}")
+                if cluster_num in filtered_df['Cluster_KMeans'].unique():
+                    cluster_data = filtered_df[filtered_df['Cluster_KMeans'] == cluster_num]
+                    st.write(f"  - Jumlah wilayah: {len(cluster_data)}")
+                    st.write(f"  - PDRB rata-rata: Rp {cluster_data['PDRB'].mean():,.0f}")
+                    st.write(f"  - Penduduk miskin rata-rata: {cluster_data['jumlah_penduduk_miskin'].mean():,.0f} jiwa")
+                st.write("---")
+        
+        # Download section
         st.subheader("💾 Download Data")
         
-        csv = filtered_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Download Data Terfilter (CSV)",
-            data=csv,
-            file_name="data_clustering_kemiskinan.csv",
-            mime="text/csv"
-        )
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Download data terfilter
+            csv = filtered_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download Data Terfilter (CSV)",
+                data=csv,
+                file_name=f"data_kemiskinan_filtered_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                help="Download data dengan filter yang telah diterapkan"
+            )
+        
+        with col2:
+            # Download seluruh data
+            csv_full = df_display.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download Seluruh Data (CSV)",
+                data=csv_full,
+                file_name=f"data_kemiskinan_full_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                help="Download seluruh data tanpa filter"
+            )
+        
+        # Quick summary
+        st.subheader("📈 Ringkasan Cepat")
+        
+        summary_col1, summary_col2, summary_col3 = st.columns(3)
+        
+        with summary_col1:
+            st.write("**Wilayah dengan PDRB Tertinggi:**")
+            max_pdrb = filtered_df.loc[filtered_df['PDRB'].idxmax()]
+            st.write(f"{max_pdrb['kabupaten_kota']}")
+            st.write(f"Rp {max_pdrb['PDRB']:,.0f}")
+            st.write(f"Cluster: {int(max_pdrb['Cluster_KMeans'])}")
+        
+        with summary_col2:
+            st.write("**Wilayah dengan Penduduk Miskin Tertinggi:**")
+            max_miskin = filtered_df.loc[filtered_df['jumlah_penduduk_miskin'].idxmax()]
+            st.write(f"{max_miskin['kabupaten_kota']}")
+            st.write(f"{max_miskin['jumlah_penduduk_miskin']:,} jiwa")
+            st.write(f"Cluster: {int(max_miskin['Cluster_KMeans'])}")
+        
+        with summary_col3:
+            st.write("**Distribusi Tahun:**")
+            tahun_counts = filtered_df['Tahun'].value_counts().sort_index()
+            for tahun, count in tahun_counts.items():
+                st.write(f"Tahun {tahun}: {count} wilayah")
 
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
