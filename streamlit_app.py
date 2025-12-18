@@ -361,7 +361,7 @@ def main():
         st.title("📈 EXPLORATORY DATA ANALYSIS")
         st.markdown("*Analisis Data dan Visualisasi Indikator Kemiskinan*")
         
-        tab1, tab2, tab3, tab4 = st.tabs(["📈 Trend", "📊 Distribusi", "🔗 Korelasi", "🎯 Scatter K-Means"])
+        tab1, tab2, tab3 = st.tabs(["📈 Trend", "📊 Distribusi", "🎯 Scatter K-Means"])
         
         with tab1:
             st.subheader("Analisis Trend Tahun 2017-2019")
@@ -379,11 +379,6 @@ def main():
             with col2:
                 st.pyplot(create_scatter_plot(df_raw))
                 st.caption("Gambar 3: Hubungan PDRB vs Penduduk Miskin (2019)")
-        
-        with tab3:
-            st.subheader("Analisis Korelasi Antar Variabel")
-            st.pyplot(create_correlation_matrix(df_raw))
-            st.caption("Gambar 4: Matriks korelasi indikator kemiskinan (2019)")
             
         
         with tab4:
@@ -628,4 +623,5 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
