@@ -402,27 +402,7 @@ def main():
                     st.metric("Cluster Terbesar", 
                              f"Cluster {max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])[0]}")
             
-            # Visualisasi tambahan
-            st.subheader("📊 Perbandingan Numerik Cluster")
-            st.pyplot(create_cluster_comparison(cluster_data))
-            
-            # Tambah visualisasi tambahan
-            st.subheader("📊 Visualisasi Tambahan Berdasarkan Fitur")
-            
-            viz_option = st.selectbox(
-                "Pilih visualisasi tambahan:",
-                ["PDRB vs Penduduk Miskin per Cluster", "Pengangguran vs Garis Kemiskinan per Cluster"],
-                key="viz_option_hasil"
-            )
-            
-            if viz_option == "PDRB vs Penduduk Miskin per Cluster":
-                fig2 = create_feature_scatter_plot(df, 'PDRB', 'jumlah_penduduk_miskin', cluster_data)
-                st.pyplot(fig2)
-                st.caption("Hubungan antara PDRB dan Jumlah Penduduk Miskin per Cluster")
-            else:
-                fig2 = create_feature_scatter_plot(df, 'jumlah_pengangguran', 'garis_kemiskinan', cluster_data)
-                st.pyplot(fig2)
-                st.caption("Hubungan antara Pengangguran dan Garis Kemiskinan per Cluster")
+
         
         with tab2:
             st.subheader("🔍 Analisis Detail Tiap Cluster")
@@ -564,6 +544,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
