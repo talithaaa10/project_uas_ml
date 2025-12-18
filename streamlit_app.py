@@ -40,10 +40,6 @@ def apply_clustering(df, model, scaler):
     X_scaled = scaler.transform(X)
     df["cluster_kmeans"] = model.predict(X_scaled)
     
-    # Buat fitur visualisasi dari PDRB dan jumlah penduduk miskin
-    df["pdrb_scaled"] = (df['PDRB'] - df['PDRB'].min()) / (df['PDRB'].max() - df['PDRB'].min()) * 100
-    df["miskin_scaled"] = (df['jumlah_penduduk_miskin'] - df['jumlah_penduduk_miskin'].min()) / (df['jumlah_penduduk_miskin'].max() - df['jumlah_penduduk_miskin'].min()) * 100
-    
     return df
 
 def build_cluster_data(df):
@@ -72,8 +68,8 @@ def build_cluster_data(df):
             "garis_kemiskinan_rata": cdf["garis_kemiskinan"].mean(),
             "pengangguran_rata": cdf["jumlah_pengangguran"].mean(),
             "contoh_wilayah": cdf["kabupaten_kota"].unique()[:5].tolist(),
-            "pdrb_scaled_mean": cdf["pdrb_scaled"].mean(),
-            "miskin_scaled_mean": cdf["miskin_scaled"].mean()
+            "pdrb_max": cdf["PDRB"].max(),
+            "pdrb_min": cdf["PDRB"].min()
         }
 
     return cluster_data
@@ -190,6 +186,10 @@ def create_kmeans_scatter_plot(df, cluster_data):
         2: '#F18F01'   # Oranye untuk cluster 2
     }
     
+    # Normalisasi sementara untuk visualisasi
+    df['PDRB_norm'] = (df['PDRB'] - df['PDRB'].min()) / (df['PDRB'].max() - df['PDRB'].min()) * 100
+    df['miskin_norm'] = (df['jumlah_penduduk_miskin'] - df['jumlah_penduduk_miskin'].min()) / (df['jumlah_penduduk_miskin'].max() - df['jumlah_penduduk_miskin'].min()) * 100
+    
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Plot data points per cluster
@@ -197,14 +197,14 @@ def create_kmeans_scatter_plot(df, cluster_data):
         cluster_df = df[df['cluster_kmeans'] == cluster_num]
         color = cluster_colors[cluster_num]
         
-        ax.scatter(cluster_df['pdrb_scaled'], cluster_df['miskin_scaled'],
+        ax.scatter(cluster_df['PDRB_norm'], cluster_df['miskin_norm'],
                   c=color, s=100, alpha=0.7,
                   label=f'Cluster {cluster_num}: {cluster_data["cluster"][str(cluster_num)]["kategori"]}',
                   edgecolors='white', linewidth=0.5)
         
         # Plot centroid
-        centroid_x = cluster_data['cluster'][str(cluster_num)]['pdrb_scaled_mean']
-        centroid_y = cluster_data['cluster'][str(cluster_num)]['miskin_scaled_mean']
+        centroid_x = cluster_df['PDRB_norm'].mean()
+        centroid_y = cluster_df['miskin_norm'].mean()
         
         ax.scatter(centroid_x, centroid_y,
                   c=color, s=300, marker='X',
@@ -214,11 +214,11 @@ def create_kmeans_scatter_plot(df, cluster_data):
     # Annotate some sample points
     for idx, row in df.sample(min(10, len(df))).iterrows():
         ax.annotate(row['kabupaten_kota'][:10],  # Ambil 10 karakter pertama
-                   (row['pdrb_scaled'], row['miskin_scaled']),
+                   (row['PDRB_norm'], row['miskin_norm']),
                    fontsize=8, alpha=0.7)
     
-    ax.set_xlabel('PDRB (Normalized Scale)')
-    ax.set_ylabel('Penduduk Miskin (Normalized Scale)')
+    ax.set_xlabel('PDRB (Normalized)')
+    ax.set_ylabel('Penduduk Miskin (Normalized)')
     ax.set_title('Visualisasi Hasil Clustering K-Means', fontsize=16, fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
@@ -235,6 +235,10 @@ def create_kmeans_scatter_plot(df, cluster_data):
             verticalalignment='center', bbox=props)
     
     plt.tight_layout()
+    
+    # Hapus kolom normalisasi sementara
+    df.drop(['PDRB_norm', 'miskin_norm'], axis=1, inplace=True)
+    
     return fig
 
 def create_feature_scatter_plot(df, feature_x, feature_y, cluster_data):
@@ -411,7 +415,7 @@ def main():
             )
             
             if viz_type == "Scatter Plot PDRB vs Kemiskinan":
-                fig = create_kmeans_scatter_plot(df, cluster_data)
+                fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
                 st.pyplot(fig)
                 st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
                 
@@ -457,7 +461,7 @@ def main():
         
         with tab1:
             st.subheader("📊 Perbandingan Antar Cluster")
-            fig = create_kmeans_scatter_plot(df, cluster_data)
+            fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
             st.pyplot(fig)
             
             # Tambah metrics tambahan di bawah visualisasi
@@ -580,10 +584,22 @@ def main():
                 
                 st.divider()
     
-      # ===== DATASET =====
+    # ===== DATASET =====
     else:
         st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
+        
+        # Pilih kolom yang akan ditampilkan
+        selected_columns = [
+            'Tahun',
+            'kabupaten_kota',
+            'jumlah_warga_jabar',
+            'jumlah_penduduk_miskin',
+            'garis_kemiskinan',
+            'jumlah_pengangguran',
+            'PDRB',
+            'cluster_kmeans'
+        ]
         
         # Filters
         st.subheader("🔍 Filter Data")
@@ -605,6 +621,9 @@ def main():
         if cluster_filter:
             filtered_df = filtered_df[filtered_df['cluster_kmeans'].isin(cluster_filter)]
         
+        # Pilih hanya kolom yang diinginkan
+        filtered_df = filtered_df[selected_columns]
+        
         # Statistics
         st.subheader("📊 Statistik Data")
         
@@ -620,9 +639,29 @@ def main():
         
         # Data Table
         st.subheader("📋 Tabel Data")
+        
+        # Format nama kolom untuk tampilan yang lebih baik
+        display_columns = {
+            'Tahun': 'Tahun',
+            'kabupaten_kota': 'Kabupaten/Kota',
+            'jumlah_warga_jabar': 'Jumlah Warga',
+            'jumlah_penduduk_miskin': 'Penduduk Miskin',
+            'garis_kemiskinan': 'Garis Kemiskinan',
+            'jumlah_pengangguran': 'Pengangguran',
+            'PDRB': 'PDRB',
+            'cluster_kmeans': 'Cluster K-Means'
+        }
+        
         st.dataframe(
-            filtered_df,
+            filtered_df.rename(columns=display_columns),
             use_container_width=True,
+            column_config={
+                "Tahun": st.column_config.NumberColumn(format="%d"),
+                "PDRB": st.column_config.NumberColumn(format="Rp %,.0f"),
+                "Garis Kemiskinan": st.column_config.NumberColumn(format="Rp %,.0f"),
+                "Cluster K-Means": st.column_config.NumberColumn(format="%d")
+            },
+            hide_index=True
         )
         
         # Download
@@ -639,4 +678,3 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
-
