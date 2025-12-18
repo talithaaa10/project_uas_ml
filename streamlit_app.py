@@ -38,19 +38,13 @@ def apply_clustering(df, model, scaler):
 
     X = df[fitur]
     X_scaled = scaler.transform(X)
-    df["Cluster"] = model.predict(X_scaled)
+    df["cluster_kmeans"] = model.predict(X_scaled)
     
-    # Simpan koordinat untuk visualisasi
-    df["PCA1"], df["PCA2"] = get_pca_coordinates(X_scaled)
+    # Buat fitur visualisasi dari PDRB dan jumlah penduduk miskin
+    df["pdrb_scaled"] = (df['PDRB'] - df['PDRB'].min()) / (df['PDRB'].max() - df['PDRB'].min()) * 100
+    df["miskin_scaled"] = (df['jumlah_penduduk_miskin'] - df['jumlah_penduduk_miskin'].min()) / (df['jumlah_penduduk_miskin'].max() - df['jumlah_penduduk_miskin'].min()) * 100
     
     return df
-
-def get_pca_coordinates(X_scaled):
-    """Reduksi dimensi sederhana untuk visualisasi 2D"""
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=2)
-    coordinates = pca.fit_transform(X_scaled)
-    return coordinates[:, 0], coordinates[:, 1]
 
 def build_cluster_data(df):
     """Membangun data cluster dengan kategori"""
@@ -67,8 +61,8 @@ def build_cluster_data(df):
         2: "Wilayah Perlu Perhatian"
     }
 
-    for i in sorted(df["Cluster"].unique()):
-        cdf = df[df["Cluster"] == i]
+    for i in sorted(df["cluster_kmeans"].unique()):
+        cdf = df[df["cluster_kmeans"] == i]
 
         cluster_data["cluster"][str(i)] = {
             "kategori": kategori_cluster[i],
@@ -78,8 +72,8 @@ def build_cluster_data(df):
             "garis_kemiskinan_rata": cdf["garis_kemiskinan"].mean(),
             "pengangguran_rata": cdf["jumlah_pengangguran"].mean(),
             "contoh_wilayah": cdf["kabupaten_kota"].unique()[:5].tolist(),
-            "centroid_pca1": cdf["PCA1"].mean(),
-            "centroid_pca2": cdf["PCA2"].mean()
+            "pdrb_scaled_mean": cdf["pdrb_scaled"].mean(),
+            "miskin_scaled_mean": cdf["miskin_scaled"].mean()
         }
 
     return cluster_data
@@ -199,18 +193,18 @@ def create_kmeans_scatter_plot(df, cluster_data):
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Plot data points per cluster
-    for cluster_num in df['Cluster'].unique():
-        cluster_df = df[df['Cluster'] == cluster_num]
+    for cluster_num in df['cluster_kmeans'].unique():
+        cluster_df = df[df['cluster_kmeans'] == cluster_num]
         color = cluster_colors[cluster_num]
         
-        ax.scatter(cluster_df['PCA1'], cluster_df['PCA2'],
+        ax.scatter(cluster_df['pdrb_scaled'], cluster_df['miskin_scaled'],
                   c=color, s=100, alpha=0.7,
                   label=f'Cluster {cluster_num}: {cluster_data["cluster"][str(cluster_num)]["kategori"]}',
                   edgecolors='white', linewidth=0.5)
         
         # Plot centroid
-        centroid_x = cluster_data['cluster'][str(cluster_num)]['centroid_pca1']
-        centroid_y = cluster_data['cluster'][str(cluster_num)]['centroid_pca2']
+        centroid_x = cluster_data['cluster'][str(cluster_num)]['pdrb_scaled_mean']
+        centroid_y = cluster_data['cluster'][str(cluster_num)]['miskin_scaled_mean']
         
         ax.scatter(centroid_x, centroid_y,
                   c=color, s=300, marker='X',
@@ -220,11 +214,11 @@ def create_kmeans_scatter_plot(df, cluster_data):
     # Annotate some sample points
     for idx, row in df.sample(min(10, len(df))).iterrows():
         ax.annotate(row['kabupaten_kota'][:10],  # Ambil 10 karakter pertama
-                   (row['PCA1'], row['PCA2']),
+                   (row['pdrb_scaled'], row['miskin_scaled']),
                    fontsize=8, alpha=0.7)
     
-    ax.set_xlabel('Komponen PCA 1')
-    ax.set_ylabel('Komponen PCA 2')
+    ax.set_xlabel('PDRB (Normalized Scale)')
+    ax.set_ylabel('Penduduk Miskin (Normalized Scale)')
     ax.set_title('Visualisasi Hasil Clustering K-Means', fontsize=16, fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
@@ -243,42 +237,6 @@ def create_kmeans_scatter_plot(df, cluster_data):
     plt.tight_layout()
     return fig
 
-def create_3d_kmeans_plot(df, cluster_data):
-    """Create 3D scatter plot for KMeans clustering"""
-    from mpl_toolkits.mplot3d import Axes3D
-    
-    # Warna untuk tiap cluster
-    cluster_colors = {
-        0: '#2E86AB',  # Biru
-        1: '#A23B72',  # Ungu
-        2: '#F18F01'   # Oranye
-    }
-    
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(111, projection='3d')
-    
-    # Plot data points per cluster
-    for cluster_num in df['Cluster'].unique():
-        cluster_df = df[df['Cluster'] == cluster_num]
-        color = cluster_colors[cluster_num]
-        
-        ax.scatter(cluster_df['PCA1'], cluster_df['PCA2'], cluster_df['PDRB_normalized'],
-                  c=color, s=80, alpha=0.7,
-                  label=f'Cluster {cluster_num}: {cluster_data["cluster"][str(cluster_num)]["kategori"]}',
-                  edgecolors='white', linewidth=0.5)
-    
-    ax.set_xlabel('PCA 1')
-    ax.set_ylabel('PCA 2')
-    ax.set_zlabel('PDRB (Normalized)')
-    ax.set_title('Visualisasi 3D Hasil Clustering K-Means', fontsize=14, fontweight='bold')
-    ax.legend()
-    
-    # Rotate untuk view yang lebih baik
-    ax.view_init(elev=20, azim=45)
-    
-    plt.tight_layout()
-    return fig
-
 def create_feature_scatter_plot(df, feature_x, feature_y, cluster_data):
     """Create scatter plot based on specific features"""
     fig, ax = plt.subplots(figsize=(10, 7))
@@ -291,8 +249,8 @@ def create_feature_scatter_plot(df, feature_x, feature_y, cluster_data):
     }
     
     # Plot per cluster
-    for cluster_num in df['Cluster'].unique():
-        cluster_df = df[df['Cluster'] == cluster_num]
+    for cluster_num in df['cluster_kmeans'].unique():
+        cluster_df = df[df['cluster_kmeans'] == cluster_num]
         color = cluster_colors[cluster_num]
         
         scatter = ax.scatter(cluster_df[feature_x], cluster_df[feature_y],
@@ -311,8 +269,8 @@ def create_feature_scatter_plot(df, feature_x, feature_y, cluster_data):
     for i in range(3):
         c = cluster_data['cluster'][str(i)]
         info_text += f"\nCluster {i}:\n"
-        info_text += f"  {feature_x}: {df[df['Cluster']==i][feature_x].mean():.2f}\n"
-        info_text += f"  {feature_y}: {df[df['Cluster']==i][feature_y].mean():.2f}"
+        info_text += f"  {feature_x}: {df[df['cluster_kmeans']==i][feature_x].mean():.2f}\n"
+        info_text += f"  {feature_y}: {df[df['cluster_kmeans']==i][feature_y].mean():.2f}"
     
     plt.figtext(0.02, 0.02, info_text, fontsize=9, 
                bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.5))
@@ -326,9 +284,6 @@ def main():
     df, df_raw = load_data()
     model, scaler, kmeans_model = load_model()
     df = apply_clustering(df, model, scaler)
-    
-    # Normalize PDRB for 3D plot
-    df['PDRB_normalized'] = (df['PDRB'] - df['PDRB'].min()) / (df['PDRB'].max() - df['PDRB'].min())
     
     cluster_data = build_cluster_data(df)
     
@@ -446,19 +401,19 @@ def main():
             - Setiap titik mewakili satu wilayah kabupaten/kota
             - Warna menunjukkan cluster hasil K-Means
             - Tanda 'X' menunjukkan centroid (pusat) tiap cluster
-            - PCA digunakan untuk mereduksi data multi-dimensi menjadi 2D untuk visualisasi
+            - Skala dinormalisasi untuk visualisasi yang lebih baik
             """)
             
             # Pilih jenis visualisasi
             viz_type = st.radio(
                 "Pilih Jenis Visualisasi:",
-                ["Scatter Plot 2D", "Scatter Plot 3D", "Plot berdasarkan Fitur Tertentu"]
+                ["Scatter Plot PDRB vs Kemiskinan", "Plot berdasarkan Fitur Tertentu"]
             )
             
-            if viz_type == "Scatter Plot 2D":
+            if viz_type == "Scatter Plot PDRB vs Kemiskinan":
                 fig = create_kmeans_scatter_plot(df, cluster_data)
                 st.pyplot(fig)
-                st.caption("Visualisasi 2D hasil clustering K-Means dengan PCA")
+                st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
                 
                 # Insight dari visualisasi
                 with st.expander("📊 Insight dari Visualisasi"):
@@ -467,20 +422,8 @@ def main():
                     1. **Cluster Separation**: Jarak antar centroid menunjukkan seberapa berbeda karakteristik tiap cluster
                     2. **Cluster Density**: Kepadatan titik dalam cluster menunjukkan homogenitas wilayah
                     3. **Outliers**: Titik yang jauh dari centroid mungkin memiliki karakteristik unik
-                    4. **Cluster Shape**: Pola sebaran titik menunjukkan karakteristik distribusi
+                    4. **Pattern**: Pola sebaran menunjukkan hubungan antara PDRB dan kemiskinan
                     """)
-            
-            elif viz_type == "Scatter Plot 3D":
-                fig = create_3d_kmeans_plot(df, cluster_data)
-                st.pyplot(fig)
-                st.caption("Visualisasi 3D hasil clustering K-Means")
-                
-                st.info("""
-                **Tips Interaksi 3D:**
-                - Klik dan drag untuk memutar plot 3D
-                - Zoom dengan scroll mouse
-                - Pandangan 3D membantu memahami struktur data yang kompleks
-                """)
             
             else:  # Plot berdasarkan Fitur Tertentu
                 col1, col2 = st.columns(2)
@@ -622,7 +565,7 @@ def main():
                 
                 # Wilayah dalam cluster
                 st.write("📍 **Daftar Wilayah:**")
-                cluster_regions = df[df['Cluster'] == i]['kabupaten_kota'].unique()
+                cluster_regions = df[df['cluster_kmeans'] == i]['kabupaten_kota'].unique()
                 
                 cols_regions = st.columns(3)
                 regions_per_col = len(cluster_regions) // 3 + 1
@@ -652,15 +595,15 @@ def main():
                                          default=sorted(df['Tahun'].unique()))
         with col2:
             cluster_filter = st.multiselect("Pilih Cluster", 
-                                           options=sorted(df['Cluster'].unique()), 
-                                           default=sorted(df['Cluster'].unique()))
+                                           options=sorted(df['cluster_kmeans'].unique()), 
+                                           default=sorted(df['cluster_kmeans'].unique()))
         
         # Apply filters
         filtered_df = df.copy()
         if tahun_filter:
             filtered_df = filtered_df[filtered_df['Tahun'].isin(tahun_filter)]
         if cluster_filter:
-            filtered_df = filtered_df[filtered_df['Cluster'].isin(cluster_filter)]
+            filtered_df = filtered_df[filtered_df['cluster_kmeans'].isin(cluster_filter)]
         
         # Statistics
         st.subheader("📊 Statistik Data")
@@ -684,7 +627,7 @@ def main():
                 "Tahun": st.column_config.NumberColumn(format="%d"),
                 "PDRB": st.column_config.NumberColumn(format="Rp %,.0f"),
                 "garis_kemiskinan": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "Cluster": st.column_config.NumberColumn(format="%d")
+                "cluster_kmeans": st.column_config.NumberColumn(format="%d")
             },
             hide_index=True
         )
@@ -699,10 +642,7 @@ def main():
             file_name="data_clustering_kemiskinan.csv",
             mime="text/csv"
         )
+
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
-
-
-
-
