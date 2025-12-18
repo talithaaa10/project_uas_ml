@@ -623,13 +623,6 @@ def main():
         st.dataframe(
             filtered_df,
             use_container_width=True,
-            column_config={
-                "Tahun": st.column_config.NumberColumn(format="%d"),
-                "PDRB": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "garis_kemiskinan": st.column_config.NumberColumn(format="Rp %,.0f"),
-                "cluster_kmeans": st.column_config.NumberColumn(format="%d")
-            },
-            hide_index=True
         )
         
         # Download
@@ -646,3 +639,4 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
