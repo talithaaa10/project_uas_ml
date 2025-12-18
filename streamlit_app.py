@@ -510,23 +510,41 @@ def main():
         st.markdown("*Analisis Mendalam Tiap Cluster*")
         
         # Tab untuk berbagai visualisasi
-        tab1, tab2, tab3 = st.tabs(["📊 Perbandingan", "🔍 Detail Cluster", "🎯 Visualisasi K-Means"])
+        tab1, tab2, tab3 = st.tabs(["📊 Perbandingan", "🔍 Detail Cluster"])
         
         with tab1:
             st.subheader("📊 Perbandingan Antar Cluster")
+            fig = create_kmeans_scatter_plot(df, cluster_data)
+            st.pyplot(fig)
+            
+            # Insight dan interpretasi
+            st.subheader("💡 Interpretasi Visualisasi")
+            
+            col1, col2 = st.columns(2)
             st.pyplot(create_cluster_comparison(cluster_data))
             
             # Tambah metrics tambahan
-            col1, col2, col3 = st.columns(3)
+            col1 = st.columns(1)
             with col1:
                 st.metric("Total Wilayah", len(df))
-            with col2:
-                silhouette_score = cluster_data.get('skor_silhouette', 0)
-                st.metric("Silhouette Score", f"{silhouette_score:.3f}")
-            with col3:
-                davies_score = cluster_data.get('skor_davies_bouldin', 0)
-                st.metric("Davies-Bouldin Score", f"{davies_score:.3f}")
-        
+                
+                        # Tambah visualisasi tambahan
+            st.subheader("📊 Visualisasi Tambahan")
+            
+            viz_option = st.selectbox(
+                "Pilih visualisasi tambahan:",
+                ["PDRB vs Penduduk Miskin per Cluster", "Pengangguran vs Garis Kemiskinan per Cluster"]
+            )
+            
+            if viz_option == "PDRB vs Penduduk Miskin per Cluster":
+                fig2 = create_feature_scatter_plot(df, 'PDRB', 'jumlah_penduduk_miskin', cluster_data)
+                st.pyplot(fig2)
+                st.caption("Hubungan antara PDRB dan Jumlah Penduduk Miskin per Cluster")
+            else:
+                fig2 = create_feature_scatter_plot(df, 'jumlah_pengangguran', 'garis_kemiskinan', cluster_data)
+                st.pyplot(fig2)
+                st.caption("Hubungan antara Pengangguran dan Garis Kemiskinan per Cluster")
+    
         with tab2:
             st.subheader("🔍 Analisis Detail Tiap Cluster")
             
@@ -588,63 +606,7 @@ def main():
                             st.write(f"• {region}")
                 
                 st.divider()
-        
-        with tab3:
-            st.subheader("🎯 Visualisasi Hasil Clustering K-Means")
             
-            st.info("""
-            **Penjelasan K-Means Clustering:**
-            - **Algoritma**: K-Means membagi data menjadi K cluster berdasarkan kesamaan fitur
-            - **Centroid**: Titik pusat masing-masing cluster
-            - **PCA**: Principal Component Analysis mereduksi dimensi untuk visualisasi 2D
-            - **Interpretasi**: Cluster yang terpisah dengan baik menunjukkan segmentasi yang efektif
-            """)
-            
-            # Visualisasi utama
-            fig = create_kmeans_scatter_plot(df, cluster_data)
-            st.pyplot(fig)
-            
-            # Insight dan interpretasi
-            st.subheader("💡 Interpretasi Visualisasi")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("""
-                **Indikator Kualitas Clustering:**
-                1. **Separasi antar Cluster**: Centroid yang berjauhan menunjukkan cluster yang berbeda
-                2. **Kepadatan Cluster**: Titik yang berkumpul rapat menunjukkan homogenitas
-                3. **Outlier**: Wilayah yang jauh dari centroid perlu analisis khusus
-                4. **Overlap**: Area tumpang tindih menunjukkan kesamaan karakteristik
-                """)
-            
-            with col2:
-                st.markdown("""
-                **Rekomendasi Kebijakan:**
-                1. **Cluster 0 (Ekonomi Tinggi)**: Fokus pada pemerataan
-                2. **Cluster 1 (Ekonomi Menengah)**: Penguatan infrastruktur
-                3. **Cluster 2 (Perlu Perhatian)**: Intervensi komprehensif
-                
-                **Tindak Lanjut**: Analisis per wilayah untuk kebijakan spesifik
-                """)
-            
-            # Tambah visualisasi tambahan
-            st.subheader("📊 Visualisasi Tambahan")
-            
-            viz_option = st.selectbox(
-                "Pilih visualisasi tambahan:",
-                ["PDRB vs Penduduk Miskin per Cluster", "Pengangguran vs Garis Kemiskinan per Cluster"]
-            )
-            
-            if viz_option == "PDRB vs Penduduk Miskin per Cluster":
-                fig2 = create_feature_scatter_plot(df, 'PDRB', 'jumlah_penduduk_miskin', cluster_data)
-                st.pyplot(fig2)
-                st.caption("Hubungan antara PDRB dan Jumlah Penduduk Miskin per Cluster")
-            else:
-                fig2 = create_feature_scatter_plot(df, 'jumlah_pengangguran', 'garis_kemiskinan', cluster_data)
-                st.pyplot(fig2)
-                st.caption("Hubungan antara Pengangguran dan Garis Kemiskinan per Cluster")
-    
     # ===== DATASET =====
     else:
         st.title("📋 DATASET LENGKAP")
@@ -711,3 +673,4 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
