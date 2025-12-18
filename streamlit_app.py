@@ -510,7 +510,7 @@ def main():
         st.markdown("*Analisis Mendalam Tiap Cluster*")
         
         # Tab untuk berbagai visualisasi
-        tab1, tab2, tab3 = st.tabs(["📊 Perbandingan", "🔍 Detail Cluster"])
+        tab1, tab2= st.tabs(["📊 Perbandingan", "🔍 Detail Cluster"])
         
         with tab1:
             st.subheader("📊 Perbandingan Antar Cluster")
@@ -673,4 +673,5 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
