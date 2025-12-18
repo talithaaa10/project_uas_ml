@@ -401,7 +401,9 @@ def main():
                 else:
                     st.metric("Cluster Terbesar", 
                              f"Cluster {max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])[0]}")
-            
+
+                    st.subheader("📊 Perbandingan Numerik Cluster")
+            st.pyplot(create_cluster_comparison(cluster_data))
 
         
         with tab2:
@@ -544,6 +546,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
