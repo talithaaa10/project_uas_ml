@@ -374,7 +374,7 @@ def main():
             # Pilih jenis visualisasi
             viz_type = st.radio(
                 "Pilih Jenis Visualisasi:",
-                ["Scatter Plot PDRB vs Kemiskinan", "Plot berdasarkan Fitur Tertentu"]
+                ["Scatter Plot PDRB vs Kemiskinan"]
             )
             
             if viz_type == "Scatter Plot PDRB vs Kemiskinan":
@@ -610,6 +610,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
