@@ -387,8 +387,6 @@ def main():
             st.subheader("📊 Perbandingan Antar Cluster")
             fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
             st.pyplot(fig)
-            
-            # Tambah metrics tambahan di bawah visualisasi
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Total Wilayah", len(df))
@@ -402,7 +400,7 @@ def main():
                     st.metric("Cluster Terbesar", 
                              f"Cluster {max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])[0]}")
 
-                    st.subheader("📊 Perbandingan Numerik Cluster")
+            st.subheader("📊 Perbandingan Numerik Cluster")
             st.pyplot(create_cluster_comparison(cluster_data))
 
         
@@ -546,6 +544,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
