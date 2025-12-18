@@ -642,68 +642,6 @@ def main():
         st.title("📋 DATASET LENGKAP")
         st.markdown("*Tabel Data dengan Filter dan Download*")
         
-        # Buat dataframe untuk tampilan tanpa kolom PCA dan PDRB_normalized
-        df_display = df.drop(columns=['PCA1', 'PCA2', 'PDRB_normalized'], errors='ignore').copy()
-        # Ganti nama kolom Cluster menjadi Cluster_KMeans untuk lebih jelas
-        df_display = df_display.rename(columns={'Cluster': 'Cluster_KMeans'})
-        
-        # Filters
-        st.subheader("🔍 Filter Data")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            tahun_filter = st.multiselect("Pilih Tahun", 
-                                         options=sorted(df_display['Tahun'].unique()), 
-                                         default=sorted(df_display['Tahun'].unique()))
-        with col2:
-            cluster_filter = st.multiselect("Pilih Cluster", 
-                                           options=sorted(df_display['Cluster_KMeans'].unique()), 
-                                           default=sorted(df_display['Cluster_KMeans'].unique()))
-        
-        # Apply filters
-        filtered_df = df_display.copy()
-        if tahun_filter:
-            filtered_df = filtered_df[filtered_df['Tahun'].isin(tahun_filter)]
-        if cluster_filter:
-            filtered_df = filtered_df[filtered_df['Cluster_KMeans'].isin(cluster_filter)]
-        
-        # Statistics
-        st.subheader("📊 Statistik Data")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Records", len(filtered_df))
-        with col2:
-            avg_pdrb = filtered_df['PDRB'].mean()
-            st.metric("PDRB Rata-rata", f"Rp {avg_pdrb:,.0f}")
-        with col3:
-            avg_miskin = filtered_df['jumlah_penduduk_miskin'].mean()
-            st.metric("Penduduk Miskin Rata-rata", f"{avg_miskin:.1f} ribu")
-        
-        # Tambah statistik tambahan
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            total_miskin = filtered_df['jumlah_penduduk_miskin'].sum()
-            st.metric("Total Penduduk Miskin", f"{total_miskin:,.0f} jiwa")
-        with col2:
-            avg_pengangguran = filtered_df['jumlah_pengangguran'].mean()
-            st.metric("Pengangguran Rata-rata", f"{avg_pengangguran:,.0f} jiwa")
-        with col3:
-            distribusi_cluster = filtered_df['Cluster_KMeans'].value_counts()
-            cluster_terbanyak = distribusi_cluster.idxmax()
-            st.metric("Cluster Dominan", f"Cluster {cluster_terbanyak}")
-        
-        # Tampilkan distribusi cluster
-        st.subheader("📊 Distribusi Cluster K-Means")
-        cluster_counts = filtered_df['Cluster_KMeans'].value_counts().sort_index()
-        
-        col1, col2, col3 = st.columns(3)
-        for i, (cluster_num, count) in enumerate(cluster_counts.items()):
-            with [col1, col2, col3][i]:
-                persentase = (count / len(filtered_df)) * 100
-                st.metric(f"Cluster {cluster_num}", 
-                         f"{count} wilayah", 
-                         f"{persentase:.1f}%")
         
         # Data Table
         st.subheader("📋 Tabel Data Lengkap")
@@ -830,4 +768,5 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
