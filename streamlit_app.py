@@ -369,7 +369,7 @@ def main():
                 ["Scatter Plot PDRB vs Kemiskinan"]
             )
             
-        if viz_type == "Scatter Plot PDRB vs Kemiskinan":
+    if viz_type == "Scatter Plot PDRB vs Kemiskinan":
     # Create scatter plot
     fig, ax = plt.subplots(figsize=(9, 6))
     sns.scatterplot(
@@ -562,6 +562,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
