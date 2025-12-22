@@ -369,10 +369,28 @@ def main():
                 ["Scatter Plot PDRB vs Kemiskinan"]
             )
             
-            if viz_type == "Scatter Plot PDRB vs Kemiskinan":
-                fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
-                st.pyplot(fig)
-                st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
+        if viz_type == "Scatter Plot PDRB vs Kemiskinan":
+    # Create scatter plot
+    fig, ax = plt.subplots(figsize=(9, 6))
+    sns.scatterplot(
+        data=df.copy(), 
+        x='PDRB', 
+        y='jumlah_penduduk_miskin', 
+        hue='kabupaten_kota', 
+        size='jumlah_warga_jabar', 
+        sizes=(50, 500), 
+        legend=False, 
+        palette='viridis', 
+        alpha=0.7,
+        ax=ax
+    )
+    ax.set_title('Peta Sebaran: Ekonomi (PDRB) vs Kemiskinan (2019)', fontsize=14)
+    ax.set_xlabel('PDRB (Ekonomi Makro)')
+    ax.set_ylabel('Jumlah Penduduk Miskin')
+    ax.grid(True)
+    
+    st.pyplot(fig)
+    st.caption("Visualisasi Peta Sebaran: PDRB vs Penduduk Miskin per Kabupaten/Kota")
                 
             
     # ===== HASIL CLUSTERING =====
@@ -544,6 +562,7 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
 
 
