@@ -293,7 +293,7 @@ def main():
     
     # ===== SIDEBAR =====
     with st.sidebar:
-        st.title("📊 Menu Analisis")
+        st.title("Fitur Menu")
         
         menu = st.radio(
             "Pilih Fitur:",
@@ -595,4 +595,5 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
 
