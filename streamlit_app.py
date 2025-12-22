@@ -353,46 +353,75 @@ def main():
         st.title("📈 EXPLORATORY DATA ANALYSIS")
         st.markdown("*Analisis Data dan Visualisasi Indikator Kemiskinan*")
         
-        tab1, tab2 = st.tabs(["📈 Trend", "🎯 Scatter K-Means"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📈 Trend", "📊 Distribusi", "🎯 Scatter Plot", "🔗 Korelasi"])
         
         with tab1:
             st.subheader("Analisis Trend Tahun 2017-2019")
-            st.pyplot(create_line_plot(df_raw))
+            fig = create_line_plot(df_raw)
+            st.pyplot(fig)
             st.caption("Gambar 1: Trend penduduk miskin dan garis kemiskinan")
             
         with tab2:
-            st.subheader("🎯 Visualisasi Hasil Clustering K-Means")
+            st.subheader("Distribusi Data per Tahun")
+            fig = create_box_plots(df_raw)
+            st.pyplot(fig)
+            st.caption("Gambar 2: Distribusi penduduk miskin dan pengangguran per tahun")
+        
+        with tab3:
+            st.subheader("🎯 Peta Sebaran: PDRB vs Kemiskinan")
             
-            # Pilih jenis visualisasi
-            viz_type = st.radio(
-                "Pilih Jenis Visualisasi:",
-                ["Scatter Plot PDRB vs Kemiskinan"]
+            # Pilih tahun untuk scatter plot
+            tahun_pilihan = st.selectbox(
+                "Pilih Tahun:",
+                sorted(df_raw['Tahun'].unique(), reverse=True),
+                key="tahun_scatter"
             )
             
-    if viz_type == "Scatter Plot PDRB vs Kemiskinan":
-    # Create scatter plot
-    fig, ax = plt.subplots(figsize=(9, 6))
-    sns.scatterplot(
-        data=df.copy(), 
-        x='PDRB', 
-        y='jumlah_penduduk_miskin', 
-        hue='kabupaten_kota', 
-        size='jumlah_warga_jabar', 
-        sizes=(50, 500), 
-        legend=False, 
-        palette='viridis', 
-        alpha=0.7,
-        ax=ax
-    )
-    ax.set_title('Peta Sebaran: Ekonomi (PDRB) vs Kemiskinan (2019)', fontsize=14)
-    ax.set_xlabel('PDRB (Ekonomi Makro)')
-    ax.set_ylabel('Jumlah Penduduk Miskin')
-    ax.grid(True)
-    
-    st.pyplot(fig)
-    st.caption("Visualisasi Peta Sebaran: PDRB vs Penduduk Miskin per Kabupaten/Kota")
-                
+            # Filter data berdasarkan tahun yang dipilih
+            df_filtered = df_raw[df_raw['Tahun'] == tahun_pilihan].copy()
             
+            # Buat scatter plot dengan Seaborn
+            fig, ax = plt.subplots(figsize=(11, 7))
+            
+            sns.scatterplot(
+                data=df_filtered,
+                x='PDRB',
+                y='jumlah_penduduk_miskin',
+                size='jumlah_warga_jabar',
+                sizes=(50, 500),
+                hue='kabupaten_kota',
+                palette='viridis',
+                alpha=0.7,
+                legend=False,
+                ax=ax
+            )
+            
+            ax.set_title(f'Peta Sebaran: PDRB vs Kemiskinan ({tahun_pilihan})', fontsize=14, fontweight='bold')
+            ax.set_xlabel('PDRB (Ekonomi Makro)', fontsize=12)
+            ax.set_ylabel('Jumlah Penduduk Miskin', fontsize=12)
+            ax.grid(True, alpha=0.3)
+            
+            # Tambahkan label untuk beberapa wilayah
+            # Pilih beberapa wilayah dengan PDRB tertinggi dan terendah
+            df_sorted = df_filtered.sort_values('PDRB', ascending=False)
+            for idx, row in df_sorted.head(5).iterrows():
+                ax.annotate(row['kabupaten_kota'][:15],
+                           (row['PDRB'], row['jumlah_penduduk_miskin']),
+                           fontsize=8, alpha=0.8,
+                           xytext=(5, 5), textcoords='offset points')
+            
+            # Tambahkan keterangan ukuran titik
+            st.info("📌 **Keterangan:** Ukuran titik menunjukkan jumlah penduduk wilayah. Semakin besar titik, semakin banyak penduduknya.")
+            
+            st.pyplot(fig)
+            st.caption(f"Visualisasi Peta Sebaran: PDRB vs Penduduk Miskin per Kabupaten/Kota Tahun {tahun_pilihan}")
+        
+        with tab4:
+            st.subheader("Matriks Korelasi Antar Variabel")
+            fig = create_correlation_matrix(df_raw)
+            st.pyplot(fig)
+            st.caption("Gambar 4: Matriks korelasi antar variabel ekonomi dan kemiskinan")
+    
     # ===== HASIL CLUSTERING =====
     elif menu == "🎯 Hasil Clustering":
         st.title("🎯 ANALISIS HASIL CLUSTERING")
@@ -402,25 +431,58 @@ def main():
         tab1, tab2 = st.tabs(["📊 Perbandingan", "🔍 Detail Cluster"])
         
         with tab1:
-            st.subheader("📊 Perbandingan Antar Cluster")
-            fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
-            st.pyplot(fig)
+            st.subheader("📊 Visualisasi Hasil Clustering K-Means")
+            
+            # Pilih jenis visualisasi
+            viz_type = st.radio(
+                "Pilih Visualisasi:",
+                ["Scatter Plot PDRB vs Kemiskinan", "Scatter Plot Fitur Lain"],
+                horizontal=True
+            )
+            
+            if viz_type == "Scatter Plot PDRB vs Kemiskinan":
+                # Gunakan fungsi K-Means scatter plot yang sudah ada
+                fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
+                st.pyplot(fig)
+                st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
+                
+            else:  # Scatter Plot Fitur Lain
+                col1, col2 = st.columns(2)
+                with col1:
+                    feature_x = st.selectbox(
+                        "Pilih fitur sumbu X:",
+                        ['jumlah_warga_jabar', 'jumlah_penduduk_miskin', 'garis_kemiskinan', 'jumlah_pengangguran', 'PDRB'],
+                        index=0
+                    )
+                with col2:
+                    feature_y = st.selectbox(
+                        "Pilih fitur sumbu Y:",
+                        ['jumlah_warga_jabar', 'jumlah_penduduk_miskin', 'garis_kemiskinan', 'jumlah_pengangguran', 'PDRB'],
+                        index=1
+                    )
+                
+                if feature_x != feature_y:
+                    fig = create_feature_scatter_plot(df.copy(), feature_x, feature_y, cluster_data)
+                    st.pyplot(fig)
+                    st.caption(f"Visualisasi clustering berdasarkan {feature_x} vs {feature_y}")
+                else:
+                    st.warning("Pilih dua fitur yang berbeda untuk visualisasi.")
+            
+            # Metrik ringkasan
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Total Wilayah", len(df))
             with col2:
                 st.metric("Jumlah Cluster", "3")
             with col3:
-                # Hitung silhouette score sederhana (jika tersedia)
-                if cluster_data.get('skor_silhouette'):
-                    st.metric("Silhouette Score", f"{cluster_data['skor_silhouette']:.3f}")
-                else:
-                    st.metric("Cluster Terbesar", 
-                             f"Cluster {max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])[0]}")
+                # Tampilkan cluster dengan wilayah terbanyak
+                cluster_terbesar = max(cluster_data['cluster'].items(), key=lambda x: x[1]['jumlah'])
+                st.metric("Cluster Terbesar", f"Cluster {cluster_terbesar[0]} ({cluster_terbesar[1]['jumlah']} wilayah)")
 
             st.subheader("📊 Perbandingan Numerik Cluster")
-            st.pyplot(create_cluster_comparison(cluster_data))
-
+            fig = create_cluster_comparison(cluster_data)
+            st.pyplot(fig)
+            st.caption("Perbandingan PDRB dan Penduduk Miskin rata-rata per cluster")
         
         with tab2:
             st.subheader("🔍 Analisis Detail Tiap Cluster")
@@ -451,6 +513,7 @@ def main():
                     st.metric("Penduduk Miskin", f"{c['miskin_rata']:.1f} ribu")
                     st.write(f"*Pengangguran:* {c['pengangguran_rata']:,.0f} jiwa")
                     st.write(f"*Persentase Data:* {(c['jumlah']/len(df)*100):.1f}%")
+                
                 # Wilayah dalam cluster
                 st.write("📍 **Daftar Wilayah:**")
                 cluster_regions = df[df['cluster_kmeans'] == i]['kabupaten_kota'].unique()
@@ -562,13 +625,3 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
