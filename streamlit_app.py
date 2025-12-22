@@ -282,43 +282,6 @@ def create_feature_scatter_plot(df, feature_x, feature_y, cluster_data):
     plt.tight_layout()
     return fig
 
-def create_all_years_scatter_plot(df_raw):
-    """Create scatter plot for ALL years (2017, 2018, 2019)"""
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    
-    years = sorted(df_raw['Tahun'].unique())
-    
-    for idx, year in enumerate(years):
-        df_year = df_raw[df_raw['Tahun'] == year].copy()
-        
-        ax = axes[idx]
-        
-        # Buat scatter plot untuk tahun ini
-        scatter = ax.scatter(df_year['PDRB'], df_year['jumlah_penduduk_miskin'],
-                           s=df_year['jumlah_warga_jabar']/10,
-                           alpha=0.6, cmap='viridis')
-        
-        ax.set_title(f'Peta Sebaran: {year}', fontsize=12, fontweight='bold')
-        ax.set_xlabel('PDRB')
-        if idx == 0:
-            ax.set_ylabel('Jumlah Penduduk Miskin')
-        ax.grid(True, alpha=0.3)
-        
-        # Tambahkan statistik ringkasan
-        total_miskin = df_year['jumlah_penduduk_miskin'].sum() / 1000  # dalam ribuan
-        avg_pdrb = df_year['PDRB'].mean()
-        
-        # Tambahkan text box dengan statistik
-        stats_text = f"Total Penduduk Miskin: {total_miskin:,.1f} ribu\nPDRB Rata-rata: Rp {avg_pdrb:,.0f}"
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.95, stats_text, transform=ax.transAxes, fontsize=9,
-                verticalalignment='top', bbox=props)
-    
-    plt.suptitle('Perbandingan Peta Sebaran PDRB vs Kemiskinan (2017-2019)', fontsize=14, fontweight='bold')
-    plt.tight_layout()
-    
-    return fig
-
 # ==================== MAIN APP ====================
 def main():
     # Load data and apply clustering
@@ -468,48 +431,17 @@ def main():
         tab1, tab2 = st.tabs(["📊 Perbandingan", "🔍 Detail Cluster"])
         
         with tab1:
-            st.subheader("📊 Visualisasi Hasil Clustering")
+            st.subheader("📊 Visualisasi Hasil Clustering K-Means")
             
-            # Pilih jenis visualisasi
-            viz_type = st.radio(
-                "Pilih Visualisasi:",
-                ["Scatter Plot Clustering K-Means", "Scatter Plot 2017-2019"],
-                horizontal=True
-            )
+            # Tampilkan scatter plot K-Means langsung
+            fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
+            st.pyplot(fig)
+            st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
             
-            if viz_type == "Scatter Plot Clustering K-Means":
-                # Gunakan fungsi K-Means scatter plot yang sudah ada
-                fig = create_kmeans_scatter_plot(df.copy(), cluster_data)
-                st.pyplot(fig)
-                st.caption("Visualisasi hasil clustering K-Means: PDRB vs Penduduk Miskin")
-                
-            else:  # Scatter Plot 2017-2019
-                st.info("📊 **Visualisasi Peta Sebaran untuk Semua Tahun (2017-2019)**")
-                fig = create_all_years_scatter_plot(df_raw)
-                st.pyplot(fig)
-                st.caption("Perbandingan peta sebaran PDRB vs Kemiskinan untuk seluruh periode 2017-2019")
-                
-                # Tambahkan statistik ringkasan
-                st.subheader("📈 Statistik Ringkasan 2017-2019")
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    avg_pdrb = df_raw['PDRB'].mean()
-                    st.metric("PDRB Rata-rata (Semua Tahun)", f"Rp {avg_pdrb:,.0f}")
-                
-                with col2:
-                    avg_miskin = df_raw['jumlah_penduduk_miskin'].mean()
-                    st.metric("Penduduk Miskin Rata-rata", f"{avg_miskin:,.1f} jiwa")
-                
-                with col3:
-                    total_wilayah = df_raw['kabupaten_kota'].nunique()
-                    st.metric("Jumlah Wilayah", total_wilayah)
-            
-            # Metrik ringkasan clustering
-            st.subheader("📊 Ringkasan Hasil Clustering")
+            # Metrik ringkasan
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Total Data", len(df))
+                st.metric("Total Wilayah", len(df))
             with col2:
                 st.metric("Jumlah Cluster", "3")
             with col3:
