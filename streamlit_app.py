@@ -296,7 +296,7 @@ def main():
         st.title("📊 Menu Analisis")
         
         menu = st.radio(
-            "Pilih Analisis:",
+            "Pilih Fitur:",
             ["🏠 Dashboard", "📈 EDA & Visualisasi", "🎯 Hasil Clustering", "📋 Dataset"]
         )
         
@@ -595,3 +595,4 @@ def main():
 # ==================== RUN APP ====================
 if __name__ == "__main__":
     main()
+
